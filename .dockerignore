@@ -1,0 +1,44 @@
+# Git
+.git
+.gitignore
+
+# Gradle
+.gradle
+build
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea
+*.iml
+*.ipr
+*.iws
+.vscode
+*.swp
+*.swo
+
+# 환경 설정 (민감 정보)
+.env
+.env.*
+!.env.example
+
+# 로그
+*.log
+logs/
+
+# 테스트 결과
+test-results/
+**/test-output/
+
+# 문서 (빌드에 불필요)
+*.md
+docs/
+LICENSE
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.docker
+
+# OS 파일
+.DS_Store
+Thumbs.db

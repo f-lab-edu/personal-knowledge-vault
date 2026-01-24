@@ -1,0 +1,60 @@
+services:
+  mysql:
+    image: mysql:8.0
+
+    container_name: pkv-mysql
+
+    restart: unless-stopped
+
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
+      MYSQL_DATABASE: ${DB_NAME:-pkv}
+      MYSQL_CHARACTER_SET_SERVER: utf8mb4
+      MYSQL_COLLATION_SERVER: utf8mb4_unicode_ci
+
+    ports:
+      - "${DB_PORT:-3306}:3306"
+
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD:-root}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+    networks:
+      - pkv-network
+
+  app:
+    build: .
+    container_name: pkv-app
+    restart: unless-stopped
+    profiles:
+      - app
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${DB_NAME:-pkv}
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-root}
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    networks:
+      - pkv-network
+
+volumes:
+  mysql_data:
+
+networks:
+  pkv-network:
+    driver: bridge
+
+# redis:     # 시맨틱 캐싱 - 캐싱 기능 구현 시 추가
+# qdrant:    # 벡터 DB - RAG 기능 구현 시 추가
+# zookeeper: # Kafka 코디네이션 - 비동기 처리 구현 시 추가
+# kafka:     # 메시지 큐 - 비동기 처리 구현 시 추가

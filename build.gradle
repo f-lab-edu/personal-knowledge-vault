@@ -40,6 +40,9 @@ dependencies {
     implementation 'org.flywaydb:flyway-core'
     implementation 'org.flywaydb:flyway-mysql'
 
+    // Monitoring
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
     // Utility
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
