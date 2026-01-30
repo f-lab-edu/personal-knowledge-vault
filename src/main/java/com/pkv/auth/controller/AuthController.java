@@ -2,13 +2,10 @@ package com.pkv.auth.controller;
 
 import com.pkv.auth.AuthConstants;
 import com.pkv.auth.dto.MemberInfoResponse;
-import com.pkv.common.dto.ApiResponse;
-import com.pkv.common.exception.PkvException;
-import com.pkv.common.exception.ErrorCode;
-import com.pkv.auth.jwt.JwtTokenProvider;
+import com.pkv.auth.dto.TokenRefreshResult;
+import com.pkv.auth.service.AuthService;
 import com.pkv.auth.util.CookieUtil;
-import com.pkv.member.domain.Member;
-import com.pkv.member.repository.MemberRepository;
+import com.pkv.common.dto.ApiResponse;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -27,16 +24,13 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final MemberRepository memberRepository;
-    private final JwtTokenProvider jwtTokenProvider;
+    private final AuthService authService;
 
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<MemberInfoResponse>> getCurrentUser(
             @AuthenticationPrincipal Long memberId) {
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new IllegalStateException("Member not found: " + memberId));
-
-        return ResponseEntity.ok(ApiResponse.success(MemberInfoResponse.from(member)));
+        MemberInfoResponse response = authService.getCurrentMember(memberId);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @PostMapping("/logout")
@@ -50,29 +44,11 @@ public class AuthController {
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<Void>> refresh(HttpServletRequest request) {
         String refreshToken = extractRefreshTokenFromCookie(request);
-
-        if (refreshToken == null) {
-            throw new PkvException(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
-        }
-
-        if (!jwtTokenProvider.validateToken(refreshToken)) {
-            throw new PkvException(ErrorCode.REFRESH_TOKEN_EXPIRED);
-        }
-
-        if (!jwtTokenProvider.validateRefreshToken(refreshToken)) {
-            throw new PkvException(ErrorCode.INVALID_TOKEN);
-        }
-
-        Long memberId = jwtTokenProvider.getMemberId(refreshToken);
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new PkvException(ErrorCode.INVALID_TOKEN));
-
-        String newAccessToken = jwtTokenProvider.createAccessToken(memberId, member.getEmail());
-        long maxAgeSeconds = jwtTokenProvider.getAccessTokenExpiry() / 1000;
+        TokenRefreshResult result = authService.refreshAccessToken(refreshToken);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE,
-                        CookieUtil.createCookie(AuthConstants.ACCESS_TOKEN_COOKIE, newAccessToken, maxAgeSeconds, AuthConstants.ACCESS_TOKEN_PATH).toString())
+                        CookieUtil.createCookie(AuthConstants.ACCESS_TOKEN_COOKIE, result.accessToken(), result.maxAgeSeconds(), AuthConstants.ACCESS_TOKEN_PATH).toString())
                 .body(ApiResponse.success());
     }
 
