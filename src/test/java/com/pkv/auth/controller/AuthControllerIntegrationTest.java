@@ -92,4 +92,49 @@ class AuthControllerIntegrationTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(header().exists("Set-Cookie"));
     }
+
+    @Test
+    @DisplayName("유효한 refresh token으로 /api/auth/refresh 호출 시 새 access token을 발급한다")
+    void refresh_withValidRefreshToken_returnsNewAccessToken() throws Exception {
+        String refreshToken = jwtTokenProvider.createRefreshToken(testMember.getId());
+
+        mockMvc.perform(post("/api/auth/refresh")
+                        .cookie(new Cookie("refresh_token", refreshToken))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(header().exists("Set-Cookie"));
+    }
+
+    @Test
+    @DisplayName("refresh token 없이 /api/auth/refresh 호출 시 A006 에러를 반환한다")
+    void refresh_withoutRefreshToken_returnsNotFound() throws Exception {
+        mockMvc.perform(post("/api/auth/refresh")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("A006"));
+    }
+
+    @Test
+    @DisplayName("유효하지 않은 refresh token으로 /api/auth/refresh 호출 시 A005 에러를 반환한다")
+    void refresh_withInvalidRefreshToken_returnsExpired() throws Exception {
+        mockMvc.perform(post("/api/auth/refresh")
+                        .cookie(new Cookie("refresh_token", "invalid-token"))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("A005"));
+    }
+
+    @Test
+    @DisplayName("access token을 refresh token으로 사용 시 A004 에러를 반환한다")
+    void refresh_withAccessTokenAsRefreshToken_returnsInvalidToken() throws Exception {
+        mockMvc.perform(post("/api/auth/refresh")
+                        .cookie(new Cookie("refresh_token", validAccessToken))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("A004"));
+    }
 }

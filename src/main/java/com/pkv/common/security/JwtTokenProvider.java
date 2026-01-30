@@ -14,6 +14,10 @@ import java.util.Date;
 @Component
 public class JwtTokenProvider {
 
+    private static final String TOKEN_TYPE_CLAIM = "type";
+    private static final String TOKEN_TYPE_ACCESS = "access";
+    private static final String TOKEN_TYPE_REFRESH = "refresh";
+
     private final SecretKey secretKey;
     private final long accessTokenExpiry;
     private final long refreshTokenExpiry;
@@ -34,6 +38,7 @@ public class JwtTokenProvider {
         return Jwts.builder()
                 .subject(String.valueOf(memberId))
                 .claim("email", email)
+                .claim(TOKEN_TYPE_CLAIM, TOKEN_TYPE_ACCESS)
                 .issuedAt(now)
                 .expiration(expiry)
                 .signWith(secretKey)
@@ -46,6 +51,7 @@ public class JwtTokenProvider {
 
         return Jwts.builder()
                 .subject(String.valueOf(memberId))
+                .claim(TOKEN_TYPE_CLAIM, TOKEN_TYPE_REFRESH)
                 .issuedAt(now)
                 .expiration(expiry)
                 .signWith(secretKey)
@@ -64,6 +70,16 @@ public class JwtTokenProvider {
         }
     }
 
+    public boolean validateRefreshToken(String token) {
+        try {
+            Claims claims = getClaims(token);
+            String tokenType = claims.get(TOKEN_TYPE_CLAIM, String.class);
+            return TOKEN_TYPE_REFRESH.equals(tokenType);
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
+    }
+
     public Long getMemberId(String token) {
         Claims claims = getClaims(token);
         return Long.parseLong(claims.getSubject());
@@ -72,6 +88,14 @@ public class JwtTokenProvider {
     public String getEmail(String token) {
         Claims claims = getClaims(token);
         return claims.get("email", String.class);
+    }
+
+    public long getAccessTokenExpiry() {
+        return accessTokenExpiry;
+    }
+
+    public long getRefreshTokenExpiry() {
+        return refreshTokenExpiry;
     }
 
     private Claims getClaims(String token) {

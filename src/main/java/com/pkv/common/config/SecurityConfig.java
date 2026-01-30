@@ -56,7 +56,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/actuator/**",
                                 "/oauth2/**",
-                                "/login/oauth2/**"
+                                "/login/oauth2/**",
+                                "/api/auth/refresh"
                         ).permitAll()
                         .anyRequest().authenticated())
 
