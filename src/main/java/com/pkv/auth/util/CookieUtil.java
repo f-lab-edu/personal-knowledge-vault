@@ -12,12 +12,30 @@ import java.util.Optional;
 public class CookieUtil {
 
     public static ResponseCookie createCookie(String name, String value, long maxAgeSeconds) {
+        return createCookie(name, value, maxAgeSeconds, "/");
+    }
+
+    public static ResponseCookie createCookie(String name, String value, long maxAgeSeconds, String path) {
         return ResponseCookie.from(name, value)
                 .httpOnly(true)
                 .secure(true)
                 .sameSite("Lax")
-                .path("/")
+                .path(path)
                 .maxAge(maxAgeSeconds)
+                .build();
+    }
+
+    public static ResponseCookie deleteCookie(String name) {
+        return deleteCookie(name, "/");
+    }
+
+    public static ResponseCookie deleteCookie(String name, String path) {
+        return ResponseCookie.from(name, "")
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Lax")
+                .path(path)
+                .maxAge(0)
                 .build();
     }
 
@@ -30,15 +48,5 @@ public class CookieUtil {
                 .filter(cookie -> name.equals(cookie.getName()))
                 .map(Cookie::getValue)
                 .findFirst();
-    }
-
-    public static ResponseCookie deleteCookie(String name) {
-        return ResponseCookie.from(name, "")
-                .httpOnly(true)
-                .secure(true)
-                .sameSite("Lax")
-                .path("/")
-                .maxAge(0)
-                .build();
     }
 }

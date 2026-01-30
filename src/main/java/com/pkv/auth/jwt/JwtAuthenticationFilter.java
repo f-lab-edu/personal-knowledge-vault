@@ -1,5 +1,6 @@
 package com.pkv.auth.jwt;
 
+import com.pkv.auth.AuthConstants;
 import com.pkv.auth.util.CookieUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -21,14 +22,12 @@ import java.util.Collections;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private static final String ACCESS_TOKEN_COOKIE = "access_token";
-
     private final JwtTokenProvider jwtTokenProvider;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        CookieUtil.getCookieValue(request, ACCESS_TOKEN_COOKIE)
+        CookieUtil.getCookieValue(request, AuthConstants.ACCESS_TOKEN_COOKIE)
                 .filter(jwtTokenProvider::validateToken)
                 .ifPresent(this::setAuthentication);
 

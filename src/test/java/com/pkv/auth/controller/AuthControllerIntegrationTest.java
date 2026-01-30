@@ -15,6 +15,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -83,14 +86,20 @@ class AuthControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("로그아웃 시 쿠키 삭제 헤더가 반환된다")
+    @DisplayName("로그아웃 시 access_token과 refresh_token 쿠키 삭제 헤더가 반환된다")
     void logout_deletesCookies() throws Exception {
-        mockMvc.perform(post("/api/auth/logout")
+        var result = mockMvc.perform(post("/api/auth/logout")
                         .cookie(new Cookie("access_token", validAccessToken))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(header().exists("Set-Cookie"));
+                .andExpect(header().exists("Set-Cookie"))
+                .andReturn();
+
+        List<String> setCookieHeaders = result.getResponse().getHeaders("Set-Cookie");
+        assertThat(setCookieHeaders).hasSize(2);
+        assertThat(setCookieHeaders).anyMatch(h -> h.contains("access_token"));
+        assertThat(setCookieHeaders).anyMatch(h -> h.contains("refresh_token"));
     }
 
     @Test
@@ -103,7 +112,8 @@ class AuthControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(header().exists("Set-Cookie"));
+                .andExpect(header().exists("Set-Cookie"))
+                .andExpect(header().string("Set-Cookie", org.hamcrest.Matchers.containsString("access_token")));
     }
 
     @Test

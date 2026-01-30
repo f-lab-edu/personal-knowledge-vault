@@ -1,5 +1,6 @@
 package com.pkv.auth.controller;
 
+import com.pkv.auth.AuthConstants;
 import com.pkv.auth.dto.MemberInfoResponse;
 import com.pkv.common.dto.ApiResponse;
 import com.pkv.common.exception.PkvException;
@@ -11,7 +12,6 @@ import com.pkv.member.repository.MemberRepository;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -27,14 +27,8 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private static final String ACCESS_TOKEN_COOKIE = "access_token";
-    private static final String REFRESH_TOKEN_COOKIE = "refresh_token";
-
     private final MemberRepository memberRepository;
     private final JwtTokenProvider jwtTokenProvider;
-
-    @Value("${jwt.access-token-expiry}")
-    private long accessTokenExpiry;
 
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<MemberInfoResponse>> getCurrentUser(
@@ -48,8 +42,8 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout() {
         return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, CookieUtil.deleteCookie(ACCESS_TOKEN_COOKIE).toString())
-                .header(HttpHeaders.SET_COOKIE, CookieUtil.deleteCookie(REFRESH_TOKEN_COOKIE).toString())
+                .header(HttpHeaders.SET_COOKIE, CookieUtil.deleteCookie(AuthConstants.ACCESS_TOKEN_COOKIE, AuthConstants.ACCESS_TOKEN_PATH).toString())
+                .header(HttpHeaders.SET_COOKIE, CookieUtil.deleteCookie(AuthConstants.REFRESH_TOKEN_COOKIE, AuthConstants.REFRESH_TOKEN_PATH).toString())
                 .body(ApiResponse.success());
     }
 
@@ -74,11 +68,11 @@ public class AuthController {
                 .orElseThrow(() -> new PkvException(ErrorCode.INVALID_TOKEN));
 
         String newAccessToken = jwtTokenProvider.createAccessToken(memberId, member.getEmail());
-        long maxAgeSeconds = accessTokenExpiry / 1000;
+        long maxAgeSeconds = jwtTokenProvider.getAccessTokenExpiry() / 1000;
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE,
-                        CookieUtil.createCookie(ACCESS_TOKEN_COOKIE, newAccessToken, maxAgeSeconds).toString())
+                        CookieUtil.createCookie(AuthConstants.ACCESS_TOKEN_COOKIE, newAccessToken, maxAgeSeconds, AuthConstants.ACCESS_TOKEN_PATH).toString())
                 .body(ApiResponse.success());
     }
 
@@ -88,7 +82,7 @@ public class AuthController {
             return null;
         }
         return Arrays.stream(cookies)
-                .filter(cookie -> REFRESH_TOKEN_COOKIE.equals(cookie.getName()))
+                .filter(cookie -> AuthConstants.REFRESH_TOKEN_COOKIE.equals(cookie.getName()))
                 .map(Cookie::getValue)
                 .findFirst()
                 .orElse(null);

@@ -1,5 +1,6 @@
 package com.pkv.auth.oauth2;
 
+import com.pkv.auth.AuthConstants;
 import com.pkv.auth.jwt.JwtTokenProvider;
 import com.pkv.auth.util.CookieUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -41,9 +42,9 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         long refreshMaxAgeSeconds = jwtTokenProvider.getRefreshTokenExpiry() / 1000;
 
         response.addHeader(HttpHeaders.SET_COOKIE,
-                CookieUtil.createCookie("access_token", accessToken, accessMaxAgeSeconds).toString());
+                CookieUtil.createCookie(AuthConstants.ACCESS_TOKEN_COOKIE, accessToken, accessMaxAgeSeconds, AuthConstants.ACCESS_TOKEN_PATH).toString());
         response.addHeader(HttpHeaders.SET_COOKIE,
-                CookieUtil.createCookie("refresh_token", refreshToken, refreshMaxAgeSeconds).toString());
+                CookieUtil.createCookie(AuthConstants.REFRESH_TOKEN_COOKIE, refreshToken, refreshMaxAgeSeconds, AuthConstants.REFRESH_TOKEN_PATH).toString());
 
         getRedirectStrategy().sendRedirect(request, response, frontendUrl);
     }
