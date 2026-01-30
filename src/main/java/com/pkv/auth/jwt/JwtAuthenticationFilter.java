@@ -1,6 +1,6 @@
-package com.pkv.common.security;
+package com.pkv.auth.jwt;
 
-import com.pkv.common.util.CookieUtil;
+import com.pkv.auth.util.CookieUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

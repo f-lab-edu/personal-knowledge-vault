@@ -1,6 +1,6 @@
 package com.pkv.auth.controller;
 
-import com.pkv.common.security.JwtTokenProvider;
+import com.pkv.auth.jwt.JwtTokenProvider;
 import com.pkv.member.domain.Member;
 import com.pkv.member.repository.MemberRepository;
 import jakarta.servlet.http.Cookie;

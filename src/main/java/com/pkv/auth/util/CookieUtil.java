@@ -1,4 +1,4 @@
-package com.pkv.common.util;
+package com.pkv.auth.util;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;

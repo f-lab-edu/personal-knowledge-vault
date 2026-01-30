@@ -1,12 +1,12 @@
-package com.pkv.common.config;
+package com.pkv.auth.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pkv.auth.jwt.JwtAuthenticationFilter;
 import com.pkv.auth.oauth2.CustomOAuth2UserService;
 import com.pkv.auth.oauth2.OAuth2FailureHandler;
 import com.pkv.auth.oauth2.OAuth2SuccessHandler;
 import com.pkv.common.dto.ApiResponse;
 import com.pkv.common.exception.ErrorCode;
-import com.pkv.common.security.JwtAuthenticationFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;

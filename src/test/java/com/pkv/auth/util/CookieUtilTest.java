@@ -1,4 +1,4 @@
-package com.pkv.common.util;
+package com.pkv.auth.util;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

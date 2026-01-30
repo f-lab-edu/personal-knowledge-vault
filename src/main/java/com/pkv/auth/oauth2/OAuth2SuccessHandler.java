@@ -1,7 +1,7 @@
 package com.pkv.auth.oauth2;
 
-import com.pkv.common.security.JwtTokenProvider;
-import com.pkv.common.util.CookieUtil;
+import com.pkv.auth.jwt.JwtTokenProvider;
+import com.pkv.auth.util.CookieUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;

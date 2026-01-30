@@ -1,4 +1,4 @@
-package com.pkv.common.security;
+package com.pkv.auth.jwt;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
