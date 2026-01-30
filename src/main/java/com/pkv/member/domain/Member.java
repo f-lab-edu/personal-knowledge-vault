@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.time.Instant;
+import java.util.Objects;
 
 @Entity
 @Table(name = "users")
@@ -40,15 +41,16 @@ public class Member {
 
     @Builder
     public Member(String googleId, String email, String name) {
-        this.googleId = googleId;
+        this.googleId = Objects.requireNonNull(googleId, "googleId is required");
+        validateProfile(email, name);
         this.email = email;
         this.name = name;
-        // 생성 시점에 현재 UTC 시간 자동 설정
         this.createdAt = Instant.now();
         this.updatedAt = Instant.now();
     }
 
     public void updateProfile(String email, String name) {
+        validateProfile(email, name);
         this.email = email;
         this.name = name;
         this.updatedAt = Instant.now();
@@ -57,5 +59,10 @@ public class Member {
     public void softDelete() {
         this.deletedAt = Instant.now();
         this.updatedAt = Instant.now();
+    }
+
+    private void validateProfile(String email, String name) {
+        Objects.requireNonNull(email, "email is required");
+        Objects.requireNonNull(name, "name is required");
     }
 }
