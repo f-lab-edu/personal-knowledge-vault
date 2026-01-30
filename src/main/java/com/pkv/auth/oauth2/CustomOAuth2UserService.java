@@ -32,6 +32,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         Member member = memberRepository.findByGoogleId(userInfo.googleId())
                 .map(existingMember -> {
+                    existingMember.restoreIfDeleted();
                     existingMember.updateProfile(userInfo.email(), userInfo.name());
                     return existingMember;
                 })

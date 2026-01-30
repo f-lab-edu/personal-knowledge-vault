@@ -54,7 +54,7 @@ class AuthServiceTest {
         void success() {
             // given
             Long memberId = 1L;
-            given(memberRepository.findById(memberId)).willReturn(Optional.of(testMember));
+            given(memberRepository.findByIdAndDeletedAtIsNull(memberId)).willReturn(Optional.of(testMember));
 
             // when
             MemberInfoResponse response = authService.getCurrentMember(memberId);
@@ -69,7 +69,7 @@ class AuthServiceTest {
         void memberNotFound() {
             // given
             Long memberId = 999L;
-            given(memberRepository.findById(memberId)).willReturn(Optional.empty());
+            given(memberRepository.findByIdAndDeletedAtIsNull(memberId)).willReturn(Optional.empty());
 
             // when & then
             assertThatThrownBy(() -> authService.getCurrentMember(memberId))
@@ -94,7 +94,7 @@ class AuthServiceTest {
             given(jwtTokenProvider.validateToken(refreshToken)).willReturn(true);
             given(jwtTokenProvider.validateRefreshToken(refreshToken)).willReturn(true);
             given(jwtTokenProvider.getMemberId(refreshToken)).willReturn(memberId);
-            given(memberRepository.findById(memberId)).willReturn(Optional.of(testMember));
+            given(memberRepository.findByIdAndDeletedAtIsNull(memberId)).willReturn(Optional.of(testMember));
             given(jwtTokenProvider.createAccessToken(memberId, testMember.getEmail())).willReturn(newAccessToken);
             given(jwtTokenProvider.getAccessTokenExpiry()).willReturn(accessTokenExpiry);
 

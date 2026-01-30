@@ -5,14 +5,12 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.SQLRestriction;
 
 import java.time.Instant;
 import java.util.Objects;
 
 @Entity
 @Table(name = "users")
-@SQLRestriction("deleted_at IS NULL")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Member {
@@ -59,6 +57,13 @@ public class Member {
     public void softDelete() {
         this.deletedAt = Instant.now();
         this.updatedAt = Instant.now();
+    }
+
+    public void restoreIfDeleted() {
+        if (this.deletedAt != null) {
+            this.deletedAt = null;
+            this.updatedAt = Instant.now();
+        }
     }
 
     private void validateProfile(String email, String name) {

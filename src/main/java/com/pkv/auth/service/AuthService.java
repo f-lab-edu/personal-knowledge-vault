@@ -20,7 +20,7 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
 
     public MemberInfoResponse getCurrentMember(Long memberId) {
-        Member member = memberRepository.findById(memberId)
+        Member member = memberRepository.findByIdAndDeletedAtIsNull(memberId)
                 .orElseThrow(() -> new IllegalStateException("Member not found: " + memberId));
         return MemberInfoResponse.from(member);
     }
@@ -39,7 +39,7 @@ public class AuthService {
         }
 
         Long memberId = jwtTokenProvider.getMemberId(refreshToken);
-        Member member = memberRepository.findById(memberId)
+        Member member = memberRepository.findByIdAndDeletedAtIsNull(memberId)
                 .orElseThrow(() -> new PkvException(ErrorCode.INVALID_TOKEN));
 
         String newAccessToken = jwtTokenProvider.createAccessToken(memberId, member.getEmail());
