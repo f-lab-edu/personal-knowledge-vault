@@ -22,7 +22,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
     public OAuth2SuccessHandler(
             JwtTokenProvider jwtTokenProvider,
-            @Value("${app.frontend-url:http://localhost:3000}") String frontendUrl) {
+            @Value("${app.frontend-url:http://localhost:5173}") String frontendUrl) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.frontendUrl = frontendUrl;
     }

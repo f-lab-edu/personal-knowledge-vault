@@ -29,4 +29,4 @@ jwt:
   refresh-token-expiry: 604800000
 
 app:
-  frontend-url: http://localhost:3000
+  frontend-url: http://localhost:5173
