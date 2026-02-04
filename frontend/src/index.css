@@ -153,3 +153,13 @@ button {
 .animate-fade-in {
   animation: fadeIn 0.4s ease-out forwards;
 }
+
+.appLoading {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif);
+  color: var(--color-text-secondary);
+  letter-spacing: -0.01em;
+}

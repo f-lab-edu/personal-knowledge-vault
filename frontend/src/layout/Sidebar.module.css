@@ -41,3 +41,18 @@
     padding-top: var(--spacing-4);
     border-top: 1px solid var(--color-border);
 }
+
+.footerActions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2);
+}
+
+.withdrawButton {
+    color: var(--color-error);
+}
+
+.withdrawButton:hover:not(:disabled) {
+    background-color: rgba(211, 47, 47, 0.08);
+    color: var(--color-error);
+}
