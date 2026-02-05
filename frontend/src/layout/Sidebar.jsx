@@ -7,29 +7,24 @@ import styles from './Sidebar.module.css';
 import Button from '../components/ui/Button';
 import FileList from '../components/file/FileList';
 import UploadModal from '../components/file/UploadModal';
-import { useAuth } from '../context/useAuth';
+import { useAuth } from '../hooks/useAuth';
 
 const Sidebar = () => {
-    const { logout, withdraw } = useAuth();
+    const { logout, withdraw, isLoggingOut, isWithdrawing } = useAuth();
     const navigate = useNavigate();
     const [isUploadOpen, setIsUploadOpen] = useState(false);
-    const [isLoggingOut, setIsLoggingOut] = useState(false);
-    const [isWithdrawing, setIsWithdrawing] = useState(false);
 
     const handleLogout = async () => {
         if (isLoggingOut) {
             return;
         }
 
-        setIsLoggingOut(true);
         try {
             await logout();
             navigate('/login', { replace: true });
         } catch (error) {
             console.error(error);
             window.alert('로그아웃에 실패했습니다. 잠시 후 다시 시도해 주세요.');
-        } finally {
-            setIsLoggingOut(false);
         }
     };
 
@@ -43,15 +38,12 @@ const Sidebar = () => {
             return;
         }
 
-        setIsWithdrawing(true);
         try {
             await withdraw();
             navigate('/login', { replace: true });
         } catch (error) {
             console.error(error);
             window.alert('회원 탈퇴에 실패했습니다. 잠시 후 다시 시도해 주세요.');
-        } finally {
-            setIsWithdrawing(false);
         }
     };
 

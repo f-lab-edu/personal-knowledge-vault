@@ -3,7 +3,7 @@
  */
 import React from 'react';
 import styles from './LoginPage.module.css';
-import { useAuth } from '../context/useAuth';
+import { useAuth } from '../hooks/useAuth';
 
 const LoginPage = () => {
     const { login } = useAuth();

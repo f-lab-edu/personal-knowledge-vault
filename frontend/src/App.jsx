@@ -2,7 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import AppLayout from './layout/AppLayout';
 import LoginPage from './pages/LoginPage';
-import { useAuth } from './context/useAuth';
+import { useAuth } from './hooks/useAuth';
 
 function App() {
   const { isAuthenticated, isLoading } = useAuth();
