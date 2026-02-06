@@ -3,10 +3,13 @@
  */
 import React from 'react';
 import styles from './LoginPage.module.css';
+import { useAuth } from '../hooks/useAuth';
 
 const LoginPage = () => {
+    const { login } = useAuth();
+
     const handleLogin = () => {
-        window.location.href = '';
+        login();
     };
 
     return (
