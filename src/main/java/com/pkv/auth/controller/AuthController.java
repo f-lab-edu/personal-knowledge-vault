@@ -6,6 +6,9 @@ import com.pkv.auth.dto.TokenRefreshResult;
 import com.pkv.auth.service.AuthService;
 import com.pkv.auth.util.CookieUtil;
 import com.pkv.common.dto.ApiResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Arrays;
 
+@Tag(name = "Auth", description = "인증 관련 API")
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -26,6 +30,11 @@ public class AuthController {
 
     private final AuthService authService;
 
+    @Operation(summary = "현재 사용자 정보 조회")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패")
+    })
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<MemberInfoResponse>> getCurrentUser(
             @AuthenticationPrincipal Long memberId) {
@@ -33,6 +42,11 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+    @Operation(summary = "로그아웃")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "로그아웃 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패")
+    })
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout() {
         return ResponseEntity.ok()
@@ -41,6 +55,11 @@ public class AuthController {
                 .body(ApiResponse.success());
     }
 
+    @Operation(summary = "액세스 토큰 갱신")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "토큰 갱신 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패")
+    })
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<Void>> refresh(HttpServletRequest request) {
         String refreshToken = extractRefreshTokenFromCookie(request);
