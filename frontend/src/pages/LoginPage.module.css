@@ -1,0 +1,64 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background-color: var(--color-bg);
+    text-align: center;
+    padding: 0 var(--spacing-4);
+}
+
+.title {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-6);
+    letter-spacing: -0.02em;
+    font-size: var(--font-size-3xl);
+}
+
+@media (min-width: 768px) {
+    .title {
+        font-size: var(--font-size-4xl);
+    }
+}
+
+.description {
+    color: var(--color-text-secondary);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-lg);
+    line-height: 1.6;
+    margin-bottom: var(--spacing-10);
+    max-width: 420px;
+}
+
+.loginButton {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+    padding: 14px 32px;
+    background-color: white;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+    font-size: 1.05rem;
+    font-weight: 500;
+    color: var(--color-text-primary);
+}
+
+.loginButton:hover {
+    box-shadow: var(--shadow-md);
+    border-color: #d1d1d1;
+}
+
+.icon {
+    width: 20px;
+    height: 20px;
+    transition: transform 0.2s ease;
+}
+
+.loginButton:hover .icon {
+    transform: scale(1.1);
+}
