@@ -30,6 +30,11 @@ public class AuthController {
 
     private final AuthService authService;
 
+    /**
+     * 프론트엔드가 앱 로딩 시 로그인 여부를 확인하기 위해 호출한다.
+     * 브라우저가 access_token 쿠키를 자동 전송하며, 유효하면 사용자 정보를 응답한다.
+     * 401이 반환되면 프론트엔드가 refresh_token 쿠키로 토큰 갱신을 시도한다.
+     */
     @Operation(summary = "현재 사용자 정보 조회")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
@@ -42,6 +47,10 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+    /**
+     * 프론트엔드에서 로그아웃 호출할때 사용한다.
+     * access_token과 refresh_token 쿠키를 삭제하여 인증 상태를 해제한다.
+     */
     @Operation(summary = "로그아웃")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "로그아웃 성공"),
@@ -55,6 +64,11 @@ public class AuthController {
                 .body(ApiResponse.success());
     }
 
+    /**
+     * 프론트엔드가 API 호출 중 401을 받으면 자동으로 호출하여 access_token을 재발급받는다.
+     * refresh_token 쿠키를 검증한 뒤 새 access_token을 쿠키로 내려준다.
+     * 갱신마저 실패하면 프론트엔드는 로그인 페이지로 이동시킨다.
+     */
     @Operation(summary = "액세스 토큰 갱신")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "토큰 갱신 성공"),

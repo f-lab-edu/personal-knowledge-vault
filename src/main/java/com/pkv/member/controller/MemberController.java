@@ -23,6 +23,11 @@ public class MemberController {
 
     private final MemberService memberService;
 
+    /**
+     * 프론트엔드에서 회원 탈퇴 시도 시 호출한다.
+     * 회원 정보를 soft-delete 처리하고, access_token과 refresh_token 쿠키를 삭제한다.
+     * 프론트엔드는 로그아웃과 동일하게 인증 상태를 초기화하고 로그인 페이지로 이동한다.
+     */
     @Operation(summary = "회원 탈퇴")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "탈퇴 성공"),
