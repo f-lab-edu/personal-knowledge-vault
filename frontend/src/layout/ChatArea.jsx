@@ -1,7 +1,8 @@
 /**
  * 중앙 채팅 영역. 대화창과 입력폼
  */
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { clsx } from 'clsx';
 import styles from './ChatArea.module.css';
 import ChatInput from '../components/chat/ChatInput';
 import MessageList from '../components/chat/MessageList';
@@ -54,7 +55,7 @@ const ChatArea = () => {
             <div className={styles.scrollArea}>
                 <div className={styles.contentWrapper}>
                     {messages.length === 0 ? (
-                        <div className={styles.welcomeWrapper}>
+                        <div className={clsx(styles.welcomeWrapper, 'animate-fade-in')}>
                             <h1 className={styles.welcomeTitle}>
                                 좋은 아침입니다.
                             </h1>
