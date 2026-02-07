@@ -12,7 +12,7 @@
     margin-bottom: var(--spacing-1);
     border-bottom: 1px solid var(--color-border-light);
 
-    font-size: 10px;
+    font-size: var(--font-size-2xs);
     font-weight: 700;
     color: var(--color-text-tertiary);
     text-transform: uppercase;
@@ -31,7 +31,7 @@
 }
 
 .fileItem:hover {
-    background-color: white;
+    background-color: var(--color-bg);
     border-color: var(--color-border-light);
     box-shadow: var(--shadow-sm);
 }
@@ -89,7 +89,7 @@
 }
 
 .fileSize {
-    font-size: 10px;
+    font-size: var(--font-size-2xs);
     color: var(--color-text-tertiary);
     margin-top: 2px;
 }
@@ -113,7 +113,7 @@
 }
 
 .statusEmbedding {
-    color: #1976D2;
+    color: var(--color-info);
     background-color: rgba(25, 118, 210, 0.1);
 }
 
@@ -125,4 +125,40 @@
 .statusPending {
     color: var(--color-text-secondary);
     background-color: rgba(0, 0, 0, 0.05);
+}
+
+.deleteButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text-tertiary);
+    padding: 4px;
+    margin-left: var(--spacing-2);
+    border-radius: var(--radius-sm);
+    transition: all 0.2s;
+    opacity: 0;
+}
+
+.fileItem:hover .deleteButton {
+    opacity: 1;
+}
+
+.deleteButton:hover {
+    color: var(--color-error);
+    background-color: rgba(211, 47, 47, 0.1);
+}
+
+.deleteButton:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.emptyMessage {
+    padding: var(--spacing-6) var(--spacing-3);
+    text-align: center;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-tertiary);
 }

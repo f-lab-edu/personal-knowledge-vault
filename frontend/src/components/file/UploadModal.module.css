@@ -12,7 +12,7 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background-color: white;
+    background-color: var(--color-bg);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
     padding: var(--spacing-6);
@@ -25,7 +25,7 @@
 
 .title {
     font-size: var(--font-size-xl);
-    font-family: var(--font-serif);
+    font-family: var(--font-sans);
     font-weight: 700;
     margin-bottom: var(--spacing-2);
     color: var(--color-text-primary);
@@ -50,6 +50,11 @@
 .dropzone:hover {
     background-color: var(--color-bg-secondary);
     border-color: var(--color-border);
+}
+
+.dropzoneDragging {
+    background-color: var(--color-bg-secondary);
+    border-color: var(--color-accent);
 }
 
 .dropzoneContent {

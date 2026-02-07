@@ -1,41 +1,68 @@
-/**
- * 업로드된 파일 목록. 상태 뱃지 표시
- */
-import React from 'react';
 import { clsx } from 'clsx';
 import styles from './FileList.module.css';
+import { useSources, useDeleteSource } from '../../hooks/useSource';
+import { formatFileSize } from '../../utils/format';
+import { getErrorMessage } from '../../utils/error';
+import { toast } from '../../stores/toastStore';
+import { confirm } from '../../stores/confirmStore';
 
-// Mock Data
-const MOCK_FILES = [
-    { id: 1, name: 'Design_Patterns.pdf', size: '12MB', status: 'completed' },
-    { id: 2, name: 'Project_Requirements.md', size: '45KB', status: 'embedding' },
-    { id: 3, name: 'Legacy_Code_Analysis.txt', size: '1.2MB', status: 'failed' },
-    { id: 4, name: 'Deployment_Guide.pdf', size: '3.4MB', status: 'completed' },
-];
+const STATUS_CONFIG = {
+    UPLOADED: { className: styles.statusPending, label: '분석 대기' },
+    PROCESSING: { className: styles.statusEmbedding, label: '처리 중' },
+    COMPLETED: { className: styles.statusCompleted, label: '준비됨' },
+    FAILED: { className: styles.statusFailed, label: '실패' },
+};
 
 const StatusBadge = ({ status }) => {
-    const statusClass = {
-        completed: styles.statusCompleted,
-        embedding: styles.statusEmbedding,
-        failed: styles.statusFailed,
-        pending: styles.statusPending,
-    };
-
-    const labels = {
-        completed: '준비됨',
-        embedding: '처리 중',
-        failed: '실패',
-        pending: '대기 중',
-    };
+    const config = STATUS_CONFIG[status];
+    if (!config) return null;
 
     return (
-        <span className={clsx(styles.badge, statusClass[status])}>
-            {labels[status]}
+        <span className={clsx(styles.badge, config.className)}>
+            {config.label}
         </span>
     );
 };
 
 const FileList = () => {
+    const { data: sources = [], isLoading } = useSources();
+    const deleteMutation = useDeleteSource();
+
+    const handleDelete = async (source) => {
+        const confirmed = await confirm({
+            title: '파일 삭제',
+            description: `"${source.fileName}" 파일을 삭제하시겠습니까?`,
+            variant: 'danger',
+        });
+        if (!confirmed) return;
+
+        deleteMutation.mutate(source.id, {
+            onError: (error) => {
+                toast.error(getErrorMessage(error, '삭제에 실패했습니다.'));
+            },
+        });
+    };
+
+    if (isLoading) {
+        return (
+            <div className={styles.container}>
+                <div className={styles.emptyMessage}>불러오는 중...</div>
+            </div>
+        );
+    }
+
+    if (sources.length === 0) {
+        return (
+            <div className={styles.container}>
+                <div className={styles.emptyMessage}>
+                    업로드된 문서가 없습니다.
+                </div>
+            </div>
+        );
+    }
+
+    const canDelete = (status) => status === 'COMPLETED' || status === 'FAILED';
+
     return (
         <div className={styles.container}>
             <div className={styles.header}>
@@ -43,11 +70,11 @@ const FileList = () => {
                 <span>상태</span>
             </div>
 
-            {MOCK_FILES.map((file) => (
-                <div key={file.id} className={styles.fileItem}>
+            {sources.map((source) => (
+                <div key={source.id} className={styles.fileItem}>
                     <div className={styles.fileInfo}>
                         <svg
-                            className={clsx(styles.icon, file.name.endsWith('.pdf') && styles.iconPdf)}
+                            className={clsx(styles.icon, source.extension === 'pdf' && styles.iconPdf)}
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -55,13 +82,25 @@ const FileList = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                         <div className={styles.details}>
-                            <span className={styles.fileName}>{file.name}</span>
-                            <span className={styles.fileSize}>{file.size}</span>
+                            <span className={styles.fileName}>{source.fileName}</span>
+                            <span className={styles.fileSize}>{formatFileSize(source.fileSize)}</span>
                         </div>
                     </div>
 
                     <div className={styles.statusContainer}>
-                        <StatusBadge status={file.status} />
+                        <StatusBadge status={source.status} />
+                        {canDelete(source.status) && (
+                            <button
+                                className={styles.deleteButton}
+                                onClick={() => handleDelete(source)}
+                                disabled={deleteMutation.isPending}
+                                title="삭제"
+                            >
+                                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        )}
                     </div>
                 </div>
             ))}
