@@ -23,7 +23,7 @@ public enum ErrorCode {
 
     // Source
     SOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "S001", "소스를 찾을 수 없습니다."),
-    SOURCE_NAME_INVALID(HttpStatus.BAD_REQUEST, "S002", "파일명은 한글, 영문, 숫자, _, -만 허용되며 최대 20자입니다."),
+    SOURCE_NAME_INVALID(HttpStatus.BAD_REQUEST, "S002", "파일명은 한글, 영문, 숫자, _, -만 허용되며 최대 30자입니다."),
     SOURCE_EXTENSION_NOT_SUPPORTED(HttpStatus.BAD_REQUEST, "S003", "지원하지 않는 파일 형식입니다. (pdf, txt, md)"),
     SOURCE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "S004", "파일 크기는 30MB를 초과할 수 없습니다."),
     SOURCE_COUNT_EXCEEDED(HttpStatus.BAD_REQUEST, "S005", "파일은 최대 30개까지 업로드할 수 있습니다."),
