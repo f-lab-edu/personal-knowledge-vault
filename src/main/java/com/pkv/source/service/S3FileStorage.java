@@ -1,6 +1,7 @@
 package com.pkv.source.service;
 
 import java.time.Duration;
+import java.time.Instant;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -15,6 +16,8 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 @Service
 public class S3FileStorage {
 
+    public record PresignedUploadUrl(String url, Instant expiresAt) {}
+
     private static final Duration PRESIGN_EXPIRATION = Duration.ofMinutes(10);
 
     private final S3Client s3Client;
@@ -28,7 +31,7 @@ public class S3FileStorage {
         this.bucket = bucket;
     }
 
-    public PresignedPutObjectRequest generatePresignedPutUrl(String key, String contentType, long contentLength) {
+    public PresignedUploadUrl generatePresignedPutUrl(String key, String contentType, long contentLength) {
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucket)
                 .key(key)
@@ -41,7 +44,8 @@ public class S3FileStorage {
                 .putObjectRequest(putObjectRequest)
                 .build();
 
-        return s3Presigner.presignPutObject(presignRequest);
+        PresignedPutObjectRequest presigned = s3Presigner.presignPutObject(presignRequest);
+        return new PresignedUploadUrl(presigned.url().toString(), presigned.expiration());
     }
 
     public boolean doesObjectExist(String key) {

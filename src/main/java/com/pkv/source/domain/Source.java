@@ -54,4 +54,17 @@ public class Source {
         this.createdAt = Instant.now();
         this.updatedAt = Instant.now();
     }
+
+    public void assignStoragePath(String storagePath) {
+        this.storagePath = Objects.requireNonNull(storagePath, "storagePath is required");
+        this.updatedAt = Instant.now();
+    }
+
+    public void confirm() {
+        if (this.status != SourceStatus.INITIATED) {
+            throw new IllegalStateException("Source can only be confirmed from INITIATED status, current: " + this.status);
+        }
+        this.status = SourceStatus.UPLOADED;
+        this.updatedAt = Instant.now();
+    }
 }

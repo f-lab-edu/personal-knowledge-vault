@@ -4,7 +4,7 @@ import com.pkv.common.exception.ErrorCode;
 import com.pkv.common.exception.PkvException;
 import org.springframework.stereotype.Component;
 
-import java.util.Set;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 @Component
@@ -13,7 +13,11 @@ public class SourceValidator {
     static final long MAX_FILE_SIZE = 31_457_280L;
     static final int MAX_SOURCE_COUNT = 30;
     static final long MAX_TOTAL_SIZE = 314_572_800L;
-    static final Set<String> ALLOWED_EXTENSIONS = Set.of("pdf", "txt", "md");
+    static final Map<String, String> ALLOWED_EXTENSIONS = Map.of(
+            "pdf", "application/pdf",
+            "txt", "text/plain",
+            "md", "text/markdown"
+    );
     static final Pattern SOURCE_NAME_PATTERN = Pattern.compile("^[가-힣a-zA-Z0-9_-]{1,20}$");
 
     public void validateSourceName(String sourceName) {
@@ -23,9 +27,13 @@ public class SourceValidator {
     }
 
     public void validateExtension(String extension) {
-        if (!ALLOWED_EXTENSIONS.contains(extension)) {
+        if (!ALLOWED_EXTENSIONS.containsKey(extension)) {
             throw new PkvException(ErrorCode.SOURCE_EXTENSION_NOT_SUPPORTED);
         }
+    }
+
+    public String getContentType(String extension) {
+        return ALLOWED_EXTENSIONS.getOrDefault(extension, "application/octet-stream");
     }
 
     public void validateFileSize(long fileSize) {
