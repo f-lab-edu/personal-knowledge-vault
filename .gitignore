@@ -39,3 +39,6 @@ out/
 
 ### Logs ###
 *.log
+
+frontend/tempdocs/
+tempdocs/

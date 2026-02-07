@@ -1,13 +1,13 @@
 /**
  * AI 답변 말풍선. 출처 카드 포함
  */
-import React from 'react';
+import { clsx } from 'clsx';
 import styles from './AnswerBubble.module.css';
 import SourceCard from './SourceCard';
 
 const AnswerBubble = ({ content, sources }) => {
     return (
-        <div className={styles.container}>
+        <div className={clsx(styles.container, 'animate-fade-in')}>
             {/* Answer Badge */}
             <div className={styles.badgeWrapper}>
                 <div className={styles.badgeIcon}>

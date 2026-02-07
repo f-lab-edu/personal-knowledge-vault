@@ -10,7 +10,7 @@
 }
 
 .title {
-    font-family: var(--font-serif);
+    font-family: var(--font-sans);
     font-weight: 700;
     color: var(--color-text-primary);
     margin-bottom: var(--spacing-6);

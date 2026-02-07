@@ -2,7 +2,6 @@
     display: flex;
     flex-direction: column;
     gap: var(--spacing-3);
-    animation: fadeIn 0.5s ease-out forwards;
 }
 
 .badgeWrapper {
@@ -43,7 +42,7 @@
 }
 
 .text {
-    font-family: var(--font-serif);
+    font-family: var(--font-sans);
     font-size: 1.05rem;
     /* ~17px */
     line-height: 1.8;
@@ -92,12 +91,3 @@
     /* Chrome/Safari */
 }
 
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-
-    to {
-        opacity: 1;
-    }
-}
