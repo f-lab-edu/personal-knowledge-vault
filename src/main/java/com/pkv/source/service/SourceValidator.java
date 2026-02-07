@@ -4,6 +4,7 @@ import com.pkv.common.exception.ErrorCode;
 import com.pkv.common.exception.PkvException;
 import org.springframework.stereotype.Component;
 
+import java.text.Normalizer;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -18,10 +19,10 @@ public class SourceValidator {
             "txt", "text/plain",
             "md", "text/markdown"
     );
-    static final Pattern SOURCE_NAME_PATTERN = Pattern.compile("^[가-힣a-zA-Z0-9_-]{1,20}$");
+    static final Pattern SOURCE_NAME_PATTERN = Pattern.compile("^[가-힣a-zA-Z0-9_-]{1,30}$");
 
     public void validateSourceName(String sourceName) {
-        if (!SOURCE_NAME_PATTERN.matcher(sourceName).matches()) {
+        if (!SOURCE_NAME_PATTERN.matcher(Normalizer.normalize(sourceName, Normalizer.Form.NFC)).matches()) {
             throw new PkvException(ErrorCode.SOURCE_NAME_INVALID);
         }
     }
