@@ -19,7 +19,18 @@ public enum ErrorCode {
     REFRESH_TOKEN_NOT_FOUND(HttpStatus.UNAUTHORIZED, "A006", "리프레시 토큰이 존재하지 않습니다."),
 
     // Member
-    MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "M001", "회원을 찾을 수 없습니다.");
+    MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "M001", "회원을 찾을 수 없습니다."),
+
+    // Source
+    SOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "S001", "소스를 찾을 수 없습니다."),
+    SOURCE_NAME_INVALID(HttpStatus.BAD_REQUEST, "S002", "파일명은 한글, 영문, 숫자, _, -만 허용되며 최대 20자입니다."),
+    SOURCE_EXTENSION_NOT_SUPPORTED(HttpStatus.BAD_REQUEST, "S003", "지원하지 않는 파일 형식입니다. (pdf, txt, md)"),
+    SOURCE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "S004", "파일 크기는 30MB를 초과할 수 없습니다."),
+    SOURCE_COUNT_EXCEEDED(HttpStatus.BAD_REQUEST, "S005", "파일은 최대 30개까지 업로드할 수 있습니다."),
+    SOURCE_TOTAL_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "S006", "총 저장 용량 300MB를 초과합니다."),
+    SOURCE_NAME_DUPLICATED(HttpStatus.CONFLICT, "S007", "동일한 이름의 파일이 이미 존재합니다."),
+    SOURCE_DELETE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "S008", "현재 상태에서는 삭제할 수 없습니다."),
+    SOURCE_UPLOAD_NOT_CONFIRMED(HttpStatus.BAD_REQUEST, "S009", "파일 업로드가 확인되지 않았습니다.");
 
     private final HttpStatus httpStatus;
     private final String code;

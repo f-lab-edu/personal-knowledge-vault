@@ -30,3 +30,12 @@ jwt:
 
 app:
   frontend-url: http://localhost:5173
+
+cloud:
+  aws:
+    s3:
+      bucket: mock-bucket
+      region: ap-northeast-2
+    credentials:
+      access-key: mock-access-key
+      secret-key: mock-secret-key
