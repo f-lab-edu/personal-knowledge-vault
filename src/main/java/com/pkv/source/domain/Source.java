@@ -67,4 +67,8 @@ public class Source {
         this.status = SourceStatus.UPLOADED;
         this.updatedAt = Instant.now();
     }
+
+    public boolean isDeletable() {
+        return this.status == SourceStatus.COMPLETED || this.status == SourceStatus.FAILED;
+    }
 }

@@ -81,6 +81,10 @@ public class SourceService {
         Source source = sourceRepository.findByIdAndMemberId(sourceId, memberId)
                 .orElseThrow(() -> new PkvException(ErrorCode.SOURCE_NOT_FOUND));
 
+        if (source.getStatus() != SourceStatus.INITIATED) {
+            throw new PkvException(ErrorCode.SOURCE_UPLOAD_NOT_CONFIRMED);
+        }
+
         if (!s3FileStorage.doesObjectExist(source.getStoragePath())) {
             throw new PkvException(ErrorCode.SOURCE_UPLOAD_NOT_CONFIRMED);
         }
@@ -88,5 +92,18 @@ public class SourceService {
         source.confirm();
 
         return SourceResponse.from(source);
+    }
+
+    @Transactional
+    public void deleteSource(Long memberId, Long sourceId) {
+        Source source = sourceRepository.findByIdAndMemberId(sourceId, memberId)
+                .orElseThrow(() -> new PkvException(ErrorCode.SOURCE_NOT_FOUND));
+
+        if (!source.isDeletable()) {
+            throw new PkvException(ErrorCode.SOURCE_DELETE_NOT_ALLOWED);
+        }
+
+        s3FileStorage.deleteObject(source.getStoragePath());
+        sourceRepository.delete(source);
     }
 }
