@@ -53,6 +53,9 @@ dependencies {
 
     implementation 'io.micrometer:micrometer-registry-prometheus'
 
+    // API Documentation
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6'
+
     // Utility
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
