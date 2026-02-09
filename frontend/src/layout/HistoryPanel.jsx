@@ -1,19 +1,14 @@
-/**
- * 우측 히스토리 패널. 최근 대화 목록
- */
-import React from 'react';
-import styles from './HistoryPanel.module.css';
-import HistoryList from '../components/history/HistoryList';
+import HistoryList from '@/components/history/HistoryList';
 
 const HistoryPanel = () => {
     return (
-        <div className={styles.container}>
-            <div className={styles.header}>
-                <h2 className={styles.title}>기록</h2>
-                <p className={styles.subtitle}>최근 대화</p>
+        <div className="flex flex-col h-full p-5">
+            <div className="mb-8">
+                <h2 className="font-bold text-xl text-foreground mb-1 tracking-tight">기록</h2>
+                <p className="text-xs text-[var(--color-tertiary)] font-medium uppercase tracking-widest">최근 대화</p>
             </div>
 
-            <div className={styles.content}>
+            <div className="flex-1 overflow-hidden">
                 <HistoryList />
             </div>
         </div>

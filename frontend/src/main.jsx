@@ -1,20 +1,20 @@
-import React from 'react'
+import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App.jsx'
-import './index.css'
+import './globals.css'
 import { QueryProvider } from './providers/QueryProvider.jsx'
-import ToastContainer from './components/ui/Toast.jsx'
+import { Toaster } from './components/ui/sonner.jsx'
 import ConfirmDialog from './components/ui/ConfirmDialog.jsx'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
+  <StrictMode>
     <BrowserRouter>
       <QueryProvider>
         <App />
-        <ToastContainer />
+        <Toaster />
         <ConfirmDialog />
       </QueryProvider>
     </BrowserRouter>
-  </React.StrictMode>,
+  </StrictMode>,
 )

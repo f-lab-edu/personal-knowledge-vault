@@ -1,8 +1,5 @@
-/**
- * 메인 3-Column 레이아웃 (사이드바 + 채팅 + 히스토리)
- */
-import React, { useState } from 'react';
-import styles from './AppLayout.module.css';
+import { useState } from 'react';
+import { ChevronLeft } from 'lucide-react';
 import Sidebar from './Sidebar';
 import ChatArea from './ChatArea';
 import HistoryPanel from './HistoryPanel';
@@ -10,30 +7,27 @@ import HistoryPanel from './HistoryPanel';
 const AppLayout = () => {
     const [isHistoryOpen, setIsHistoryOpen] = useState(true);
 
-    const toggleHistory = () => {
-        setIsHistoryOpen(!isHistoryOpen);
-    };
-
     return (
-        <div className={styles.container}>
-            <aside className={styles.sidebar}>
+        <div className="flex h-screen w-screen overflow-hidden bg-background">
+            <aside className="w-[var(--lnb-width)] h-full border-r flex flex-col bg-muted">
                 <Sidebar />
             </aside>
-            <main className={styles.main}>
+            <main className="flex-1 h-full flex flex-col relative">
                 <ChatArea />
             </main>
-            <aside className={`${styles.history} ${!isHistoryOpen ? styles.historyClosed : ''}`}>
-                <HistoryPanel isOpen={isHistoryOpen} onToggle={toggleHistory} />
+            <aside className={isHistoryOpen
+                ? "w-[var(--rnb-width)] h-full border-l bg-muted"
+                : "hidden"
+            }>
+                <HistoryPanel />
             </aside>
             {!isHistoryOpen && (
                 <button
-                    className={styles.historyToggleCollapsed}
-                    onClick={toggleHistory}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md bg-muted border text-muted-foreground hover:text-foreground transition-colors"
+                    onClick={() => setIsHistoryOpen(true)}
                     aria-label="기록 패널 열기"
                 >
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
+                    <ChevronLeft className="size-4 rotate-180" />
                 </button>
             )}
         </div>

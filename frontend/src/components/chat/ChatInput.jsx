@@ -1,9 +1,6 @@
-/**
- * 질문 입력폼. 엔터로 전송, 빈 값 방지
- */
-import React, { useState } from 'react';
-import styles from './ChatInput.module.css';
-import Button from '../ui/Button';
+import { useState } from 'react';
+import { ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const ChatInput = ({ onSend, disabled }) => {
     const [text, setText] = useState('');
@@ -23,10 +20,10 @@ const ChatInput = ({ onSend, disabled }) => {
     };
 
     return (
-        <div className={styles.container}>
+        <div className="w-full max-w-[800px] mx-auto">
             <form
                 onSubmit={handleSubmit}
-                className={styles.form}
+                className="relative flex items-end border rounded-xl bg-white shadow-sm transition-all focus-within:border-foreground focus-within:shadow-[0_0_0_1px_var(--color-foreground)]"
             >
                 <textarea
                     value={text}
@@ -34,26 +31,22 @@ const ChatInput = ({ onSend, disabled }) => {
                     onKeyDown={handleKeyDown}
                     placeholder="문서에 대해 무엇이든 물어보세요..."
                     disabled={disabled}
-                    className={styles.textarea}
+                    className="w-full p-4 pr-12 bg-transparent border-none resize-none min-h-[60px] max-h-[200px] text-sm leading-relaxed text-foreground focus:outline-none placeholder:text-[var(--color-tertiary)]"
                     rows={1}
-                    style={{ minHeight: '60px' }}
                 />
-                <div className={styles.buttonWrapper}>
+                <div className="absolute right-3 bottom-3">
                     <Button
                         type="submit"
-                        size="sm"
-                        variant="primary"
+                        size="icon-sm"
                         disabled={!text.trim() || disabled}
-                        className={styles.submitButton}
+                        className="rounded-md"
                     >
-                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 12h14M12 5l7 7-7 7" />
-                        </svg>
+                        <ArrowRight className="size-3.5" />
                     </Button>
                 </div>
             </form>
-            <div className={styles.disclaimer}>
-                <span className={styles.disclaimerText}>
+            <div className="text-center mt-3">
+                <span className="text-[0.625rem] text-[var(--color-tertiary)] uppercase tracking-widest font-medium opacity-60">
                     AI 생성 콘텐츠에는 오류가 포함될 수 있습니다
                 </span>
             </div>

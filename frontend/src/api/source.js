@@ -1,7 +1,5 @@
 import axios from 'axios';
-import { request } from './http';
-
-const unwrapData = (payload) => payload?.data ?? null;
+import { request, unwrapData } from './http';
 
 const CONTENT_TYPE_MAP = {
     pdf: 'application/pdf',

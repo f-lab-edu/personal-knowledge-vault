@@ -1,38 +1,31 @@
-/**
- * AI 답변 말풍선. 출처 카드 포함
- */
-import { clsx } from 'clsx';
-import styles from './AnswerBubble.module.css';
+import { Zap } from 'lucide-react';
 import SourceCard from './SourceCard';
 
 const AnswerBubble = ({ content, sources }) => {
     return (
-        <div className={clsx(styles.container, 'animate-fade-in')}>
+        <div className="flex flex-col gap-3 animate-fade-in">
             {/* Answer Badge */}
-            <div className={styles.badgeWrapper}>
-                <div className={styles.badgeIcon}>
-                    <svg width="10" height="10" fill="none" stroke="white" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
+            <div className="flex items-center gap-2 mb-1">
+                <div className="w-5 h-5 rounded-full bg-black flex items-center justify-center shadow-sm">
+                    <Zap className="size-2.5 text-white" strokeWidth={2.5} />
                 </div>
-                <span className={styles.badgeLabel}>
+                <span className="text-xs font-bold uppercase tracking-widest text-foreground/90">
                     AI 답변
                 </span>
             </div>
 
             {/* Answer Content */}
-            <div className={styles.contentWrapper}>
-                <div className={styles.text}>
+            <div className="pl-0 md:pl-7">
+                <div className="text-base leading-[1.8] text-foreground tracking-tight antialiased selection:bg-[var(--color-selection)] selection:text-black">
                     {content}
                 </div>
 
-                {/* Sources Section */}
                 {sources && sources.length > 0 && (
-                    <div className={styles.sourcesSection}>
-                        <h4 className={styles.sourcesLabel}>
+                    <div className="mt-8 pt-6 border-t border-[var(--color-border-light)]">
+                        <h4 className="text-[0.625rem] font-bold uppercase tracking-widest text-[var(--color-tertiary)] mb-4 flex items-center gap-2">
                             참고 문서
                         </h4>
-                        <div className={styles.sourcesList}>
+                        <div className="flex gap-3 overflow-x-auto pb-4 -ml-1 pl-1 scrollbar-hide [&::-webkit-scrollbar]:hidden">
                             {sources.map((source, index) => (
                                 <SourceCard key={index} source={source} />
                             ))}
