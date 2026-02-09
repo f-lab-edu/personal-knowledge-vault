@@ -53,7 +53,7 @@ class SourceServiceTest {
                 .status(status)
                 .build();
         ReflectionTestUtils.setField(source, "id", id);
-        source.assignStoragePath("sources/" + MEMBER_ID + "/" + id + ".pdf");
+        source.assignStoragePath("sources/1234567890_test-uuid.pdf");
         return source;
     }
 
