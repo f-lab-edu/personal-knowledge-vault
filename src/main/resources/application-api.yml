@@ -1,0 +1,26 @@
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - email
+              - profile
+
+  kafka:
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    listener:
+      auto-startup: false
+
+jwt:
+  secret: ${JWT_SECRET:pkv-dev-only-jwt-secret-key-do-not-use-in-production-a1b2c3d4e5f6}
+  access-token-expiry: 1800000
+  refresh-token-expiry: 604800000
+
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
