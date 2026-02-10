@@ -57,9 +57,12 @@ dependencies {
 
     implementation 'io.micrometer:micrometer-registry-prometheus'
 
-    // Spring AI
-    implementation 'org.springframework.ai:spring-ai-starter-model-openai:1.0.3'
-    implementation 'org.springframework.ai:spring-ai-starter-vector-store-qdrant:1.0.3'
+    // LangChain4j
+    implementation platform('dev.langchain4j:langchain4j-bom:1.11.0')
+    implementation 'dev.langchain4j:langchain4j'
+    implementation 'dev.langchain4j:langchain4j-open-ai-spring-boot-starter'
+    implementation 'dev.langchain4j:langchain4j-qdrant'
+    implementation 'dev.langchain4j:langchain4j-document-parser-apache-pdfbox'
 
     // Kafka
     implementation 'org.springframework.kafka:spring-kafka'

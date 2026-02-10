@@ -26,18 +26,22 @@ spring:
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
 
-  ai:
-    openai:
+langchain4j:
+  open-ai:
+    embedding-model:
       api-key: ${OPENAI_API_KEY:}
-      embedding:
-        options:
-          model: text-embedding-3-small
-    vectorstore:
-      qdrant:
-        host: ${QDRANT_HOST:localhost}
-        port: ${QDRANT_PORT:6334}
-        collection-name: ${QDRANT_COLLECTION:pkv_vectors}
-        initialize-schema: true
+      model-name: text-embedding-3-small
+    chat-model:
+      api-key: ${OPENAI_API_KEY:}
+      model-name: gpt-4o-mini
+      temperature: 0.3
+      timeout: 30s
+      max-retries: 2
+
+qdrant:
+  host: ${QDRANT_HOST:localhost}
+  port: ${QDRANT_PORT:6334}
+  collection-name: ${QDRANT_COLLECTION:pkv_vectors}
 
 logging:
   level:
