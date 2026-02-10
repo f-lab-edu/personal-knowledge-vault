@@ -30,7 +30,10 @@ public enum ErrorCode {
     SOURCE_TOTAL_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "S006", "총 저장 용량 300MB를 초과합니다."),
     SOURCE_NAME_DUPLICATED(HttpStatus.CONFLICT, "S007", "동일한 이름의 파일이 이미 존재합니다."),
     SOURCE_DELETE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "S008", "현재 상태에서는 삭제할 수 없습니다."),
-    SOURCE_UPLOAD_NOT_CONFIRMED(HttpStatus.BAD_REQUEST, "S009", "파일 업로드가 확인되지 않았습니다.");
+    SOURCE_UPLOAD_NOT_CONFIRMED(HttpStatus.BAD_REQUEST, "S009", "파일 업로드가 확인되지 않았습니다."),
+
+    // Worker — 임베딩 파이프라인(파싱/청킹/임베딩)
+    DOCUMENT_PARSE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "W001", "문서 파싱에 실패했습니다."); // S3 다운로드 후 텍스트 추출 실패 시
 
     private final HttpStatus httpStatus;
     private final String code;

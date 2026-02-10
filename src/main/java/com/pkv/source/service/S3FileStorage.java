@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
@@ -58,6 +59,15 @@ public class S3FileStorage {
         } catch (NoSuchKeyException e) {
             return false;
         }
+    }
+
+    /**
+     * 현재 파일 크기 제한: 30BM
+     */
+    public byte[] downloadObject(String key) {
+        return s3Client.getObjectAsBytes(
+                GetObjectRequest.builder().bucket(bucket).key(key).build()
+        ).asByteArray();
     }
 
     public void deleteObject(String key) {
