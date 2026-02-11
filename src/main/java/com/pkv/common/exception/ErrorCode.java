@@ -33,7 +33,8 @@ public enum ErrorCode {
     SOURCE_UPLOAD_NOT_CONFIRMED(HttpStatus.BAD_REQUEST, "S009", "파일 업로드가 확인되지 않았습니다."),
 
     // Worker — 임베딩 파이프라인(파싱/청킹/임베딩)
-    DOCUMENT_PARSE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "W001", "문서 파싱에 실패했습니다."); // S3 다운로드 후 텍스트 추출 실패 시
+    DOCUMENT_PARSE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "W001", "문서 파싱에 실패했습니다."),
+    EMBEDDING_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "W002", "임베딩 처리에 실패했습니다.");
 
     private final HttpStatus httpStatus;
     private final String code;
