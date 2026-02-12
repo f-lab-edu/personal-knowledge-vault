@@ -4,6 +4,8 @@ import com.pkv.auth.jwt.JwtTokenProvider;
 import com.pkv.member.domain.Member;
 import com.pkv.member.repository.MemberRepository;
 import com.pkv.source.service.EmbeddingJobProducer;
+import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.store.embedding.EmbeddingStore;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -41,6 +43,9 @@ class AuthControllerIntegrationTest {
 
     @MockitoBean // 테스트 환경에 Kafka가 없으므로 Mock으로 대체
     private EmbeddingJobProducer embeddingJobProducer;
+
+    @MockitoBean // 테스트 환경에 Qdrant가 없으므로 Mock으로 대체
+    private EmbeddingStore<TextSegment> embeddingStore;
 
     private Member testMember;
     private String validAccessToken;

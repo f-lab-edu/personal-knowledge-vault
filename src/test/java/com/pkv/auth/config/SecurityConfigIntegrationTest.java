@@ -1,6 +1,8 @@
 package com.pkv.auth.config;
 
 import com.pkv.source.service.EmbeddingJobProducer;
+import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.store.embedding.EmbeddingStore;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +27,9 @@ class SecurityConfigIntegrationTest {
 
     @MockitoBean
     private EmbeddingJobProducer embeddingJobProducer;
+
+    @MockitoBean
+    private EmbeddingStore<TextSegment> embeddingStore;
 
     @Test
     @DisplayName("CORS preflight 요청이 정상적으로 처리된다")

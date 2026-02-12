@@ -44,3 +44,8 @@ cloud:
     credentials:
       access-key: mock-access-key
       secret-key: mock-secret-key
+
+qdrant:
+  host: localhost
+  port: 6334
+  collection-name: test_vectors

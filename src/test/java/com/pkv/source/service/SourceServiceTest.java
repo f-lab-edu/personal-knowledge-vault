@@ -8,6 +8,9 @@ import com.pkv.source.dto.PresignResponse;
 import com.pkv.source.dto.PresignRequest;
 import com.pkv.source.dto.SourceResponse;
 import com.pkv.source.repository.SourceRepository;
+import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.store.embedding.EmbeddingStore;
+import dev.langchain4j.store.embedding.filter.Filter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -26,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 class SourceServiceTest {
@@ -41,6 +45,9 @@ class SourceServiceTest {
 
     @Mock
     private EmbeddingJobProducer embeddingJobProducer;
+
+    @Mock
+    private EmbeddingStore<TextSegment> embeddingStore;
 
     @InjectMocks
     private SourceService sourceService;
@@ -221,7 +228,7 @@ class SourceServiceTest {
     class DeleteSource {
 
         @Test
-        @DisplayName("COMPLETED 상태의 소스를 삭제하면 S3 파일과 DB 레코드가 모두 삭제된다")
+        @DisplayName("COMPLETED 상태의 소스를 삭제하면 벡터, S3 파일, DB 레코드가 모두 삭제된다")
         void deleteCompleted() {
             // given
             Source source = createSource(1L, SourceStatus.COMPLETED);
@@ -233,12 +240,13 @@ class SourceServiceTest {
             sourceService.deleteSource(MEMBER_ID, 1L);
 
             // then
+            then(embeddingStore).should().removeAll(any(Filter.class));
             then(s3FileStorage).should().deleteObject(source.getStoragePath());
             then(sourceRepository).should().delete(source);
         }
 
         @Test
-        @DisplayName("FAILED 상태의 소스를 삭제하면 S3 파일과 DB 레코드가 모두 삭제된다")
+        @DisplayName("FAILED 상태의 소스를 삭제하면 벡터, S3 파일, DB 레코드가 모두 삭제된다")
         void deleteFailed() {
             // given
             Source source = createSource(1L, SourceStatus.FAILED);
@@ -250,6 +258,7 @@ class SourceServiceTest {
             sourceService.deleteSource(MEMBER_ID, 1L);
 
             // then
+            then(embeddingStore).should().removeAll(any(Filter.class));
             then(s3FileStorage).should().deleteObject(source.getStoragePath());
             then(sourceRepository).should().delete(source);
         }
@@ -267,6 +276,8 @@ class SourceServiceTest {
             assertThatThrownBy(() -> sourceService.deleteSource(MEMBER_ID, 1L))
                     .isInstanceOf(PkvException.class)
                     .satisfies(e -> assertErrorCode(e, ErrorCode.SOURCE_DELETE_NOT_ALLOWED));
+
+            then(embeddingStore).should(never()).removeAll(any(Filter.class));
         }
 
         @Test
@@ -282,6 +293,8 @@ class SourceServiceTest {
             assertThatThrownBy(() -> sourceService.deleteSource(MEMBER_ID, 1L))
                     .isInstanceOf(PkvException.class)
                     .satisfies(e -> assertErrorCode(e, ErrorCode.SOURCE_DELETE_NOT_ALLOWED));
+
+            then(embeddingStore).should(never()).removeAll(any(Filter.class));
         }
 
         @Test
@@ -295,6 +308,8 @@ class SourceServiceTest {
             assertThatThrownBy(() -> sourceService.deleteSource(MEMBER_ID, 999L))
                     .isInstanceOf(PkvException.class)
                     .satisfies(e -> assertErrorCode(e, ErrorCode.SOURCE_NOT_FOUND));
+
+            then(embeddingStore).should(never()).removeAll(any(Filter.class));
         }
     }
 
