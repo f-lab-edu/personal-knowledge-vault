@@ -31,12 +31,7 @@ langchain4j:
     embedding-model:
       api-key: ${OPENAI_API_KEY:}
       model-name: text-embedding-3-small
-    chat-model:
-      api-key: ${OPENAI_API_KEY:}
-      model-name: gpt-4o-mini
-      temperature: 0.3
-      timeout: 30s
-      max-retries: 2
+
 
 qdrant:
   host: ${QDRANT_HOST:localhost}

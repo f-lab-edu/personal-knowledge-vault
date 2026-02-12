@@ -7,6 +7,7 @@ import com.pkv.source.repository.SourceRepository;
 import com.pkv.worker.dto.ChunkedDocument;
 import com.pkv.source.dto.EmbeddingJobMessage;
 import com.pkv.worker.dto.ParsedDocument;
+import com.pkv.common.service.EmbeddingRepository;
 import com.pkv.worker.service.DocumentParser;
 import com.pkv.worker.service.EmbeddingService;
 import com.pkv.worker.service.TextChunker;
@@ -24,6 +25,7 @@ import org.springframework.stereotype.Component;
 public class EmbeddingPipelineConsumer {
 
     private final SourceRepository sourceRepository;
+    private final EmbeddingRepository embeddingRepository;
     private final DocumentParser documentParser;
     private final TextChunker textChunker;
     private final EmbeddingService embeddingService;
@@ -70,7 +72,7 @@ public class EmbeddingPipelineConsumer {
     }
 
     private void executePipeline(EmbeddingJobMessage message) {
-        embeddingService.deleteBySourceId(message.sourceId());
+        embeddingRepository.deleteBySourceId(message.sourceId());
 
         ParsedDocument parsed = documentParser.parse(message.storagePath(), message.fileExtension());
 

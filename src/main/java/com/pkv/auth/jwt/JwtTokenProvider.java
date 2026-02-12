@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 @Component
-@Profile("!worker")
+@Profile("api")
 public class JwtTokenProvider {
 
     private static final String TOKEN_TYPE_CLAIM = "type";

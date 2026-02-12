@@ -7,10 +7,8 @@ import com.pkv.source.domain.SourceStatus;
 import com.pkv.source.dto.PresignResponse;
 import com.pkv.source.dto.PresignRequest;
 import com.pkv.source.dto.SourceResponse;
+import com.pkv.common.service.EmbeddingRepository;
 import com.pkv.source.repository.SourceRepository;
-import dev.langchain4j.data.segment.TextSegment;
-import dev.langchain4j.store.embedding.EmbeddingStore;
-import dev.langchain4j.store.embedding.filter.Filter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -47,7 +45,7 @@ class SourceServiceTest {
     private EmbeddingJobProducer embeddingJobProducer;
 
     @Mock
-    private EmbeddingStore<TextSegment> embeddingStore;
+    private EmbeddingRepository embeddingRepository;
 
     @InjectMocks
     private SourceService sourceService;
@@ -240,7 +238,7 @@ class SourceServiceTest {
             sourceService.deleteSource(MEMBER_ID, 1L);
 
             // then
-            then(embeddingStore).should().removeAll(any(Filter.class));
+            then(embeddingRepository).should().deleteBySourceId(1L);
             then(s3FileStorage).should().deleteObject(source.getStoragePath());
             then(sourceRepository).should().delete(source);
         }
@@ -258,7 +256,7 @@ class SourceServiceTest {
             sourceService.deleteSource(MEMBER_ID, 1L);
 
             // then
-            then(embeddingStore).should().removeAll(any(Filter.class));
+            then(embeddingRepository).should().deleteBySourceId(1L);
             then(s3FileStorage).should().deleteObject(source.getStoragePath());
             then(sourceRepository).should().delete(source);
         }
@@ -277,7 +275,7 @@ class SourceServiceTest {
                     .isInstanceOf(PkvException.class)
                     .satisfies(e -> assertErrorCode(e, ErrorCode.SOURCE_DELETE_NOT_ALLOWED));
 
-            then(embeddingStore).should(never()).removeAll(any(Filter.class));
+            then(embeddingRepository).should(never()).deleteBySourceId(anyLong());
         }
 
         @Test
@@ -294,7 +292,7 @@ class SourceServiceTest {
                     .isInstanceOf(PkvException.class)
                     .satisfies(e -> assertErrorCode(e, ErrorCode.SOURCE_DELETE_NOT_ALLOWED));
 
-            then(embeddingStore).should(never()).removeAll(any(Filter.class));
+            then(embeddingRepository).should(never()).deleteBySourceId(anyLong());
         }
 
         @Test
@@ -309,7 +307,7 @@ class SourceServiceTest {
                     .isInstanceOf(PkvException.class)
                     .satisfies(e -> assertErrorCode(e, ErrorCode.SOURCE_NOT_FOUND));
 
-            then(embeddingStore).should(never()).removeAll(any(Filter.class));
+            then(embeddingRepository).should(never()).deleteBySourceId(anyLong());
         }
     }
 

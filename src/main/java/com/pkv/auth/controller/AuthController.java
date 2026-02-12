@@ -27,7 +27,7 @@ import java.util.Arrays;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-@Profile("!worker")
+@Profile("api")
 public class AuthController {
 
     private final AuthService authService;

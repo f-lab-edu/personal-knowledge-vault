@@ -15,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-@Profile("!worker")
+@Profile("api")
 public class AuthService {
 
     private final MemberRepository memberRepository;

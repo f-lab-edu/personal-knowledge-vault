@@ -7,18 +7,14 @@ import com.pkv.source.domain.SourceStatus;
 import com.pkv.source.dto.PresignRequest;
 import com.pkv.source.dto.PresignResponse;
 import com.pkv.source.dto.SourceResponse;
+import com.pkv.common.service.EmbeddingRepository;
 import com.pkv.source.repository.SourceRepository;
-import dev.langchain4j.data.segment.TextSegment;
-import dev.langchain4j.store.embedding.EmbeddingStore;
-import dev.langchain4j.store.embedding.filter.Filter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
-
-import static dev.langchain4j.store.embedding.filter.MetadataFilterBuilder.metadataKey;
 
 @Service
 @RequiredArgsConstructor
@@ -29,7 +25,7 @@ public class SourceService {
     private final SourceValidator sourceValidator;
     private final S3FileStorage s3FileStorage;
     private final EmbeddingJobProducer embeddingJobProducer;
-    private final EmbeddingStore<TextSegment> embeddingStore;
+    private final EmbeddingRepository embeddingRepository;
 
     @Transactional
     public PresignResponse requestPresignedUrl(Long memberId, PresignRequest request) {
@@ -112,8 +108,7 @@ public class SourceService {
             throw new PkvException(ErrorCode.SOURCE_DELETE_NOT_ALLOWED);
         }
 
-        Filter filter = metadataKey("sourceId").isEqualTo(sourceId);
-        embeddingStore.removeAll(filter);
+        embeddingRepository.deleteBySourceId(sourceId);
 
         s3FileStorage.deleteObject(source.getStoragePath());
         sourceRepository.delete(source);

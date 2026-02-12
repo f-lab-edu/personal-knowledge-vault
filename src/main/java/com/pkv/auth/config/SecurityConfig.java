@@ -32,7 +32,7 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
-@Profile("!worker")
+@Profile("api")
 public class SecurityConfig {
 
     private final CustomOAuth2UserService customOAuth2UserService;

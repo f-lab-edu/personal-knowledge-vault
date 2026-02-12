@@ -7,6 +7,7 @@ import com.pkv.source.domain.Source;
 import com.pkv.source.dto.EmbeddingJobMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Profile;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +17,7 @@ import java.util.concurrent.TimeoutException;
 
 @Slf4j
 @Service
+@Profile("api")
 @RequiredArgsConstructor
 public class EmbeddingJobProducer {
 
