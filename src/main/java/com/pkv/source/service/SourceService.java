@@ -23,6 +23,7 @@ public class SourceService {
     private final SourceRepository sourceRepository;
     private final SourceValidator sourceValidator;
     private final S3FileStorage s3FileStorage;
+    private final EmbeddingJobProducer embeddingJobProducer;
 
     @Transactional
     public PresignResponse requestPresignedUrl(Long memberId, PresignRequest request) {
@@ -91,6 +92,7 @@ public class SourceService {
         }
 
         source.confirm();
+        embeddingJobProducer.send(source);
 
         return SourceResponse.from(source);
     }

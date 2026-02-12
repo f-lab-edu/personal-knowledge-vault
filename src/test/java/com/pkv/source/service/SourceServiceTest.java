@@ -39,6 +39,9 @@ class SourceServiceTest {
     @Mock
     private S3FileStorage s3FileStorage;
 
+    @Mock
+    private EmbeddingJobProducer embeddingJobProducer;
+
     @InjectMocks
     private SourceService sourceService;
 
@@ -164,6 +167,7 @@ class SourceServiceTest {
 
             // then
             assertThat(response.status()).isEqualTo(SourceStatus.UPLOADED);
+            then(embeddingJobProducer).should().send(source); // confirmUpload 시 Kafka 메시지 발행이 호출되는지 검증
         }
 
         @Test

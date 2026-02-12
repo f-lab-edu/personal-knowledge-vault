@@ -32,9 +32,10 @@ public enum ErrorCode {
     SOURCE_DELETE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "S008", "현재 상태에서는 삭제할 수 없습니다."),
     SOURCE_UPLOAD_NOT_CONFIRMED(HttpStatus.BAD_REQUEST, "S009", "파일 업로드가 확인되지 않았습니다."),
 
-    // Worker — 임베딩 파이프라인(파싱/청킹/임베딩)
+    // 임베딩 파이프라인(파싱/청킹/임베딩)
     DOCUMENT_PARSE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "W001", "문서 파싱에 실패했습니다."),
-    EMBEDDING_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "W002", "임베딩 처리에 실패했습니다.");
+    EMBEDDING_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "W002", "임베딩 처리에 실패했습니다."),
+    EMBEDDING_JOB_PUBLISH_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "W003", "임베딩 작업 메시지 발행에 실패했습니다.");
 
     private final HttpStatus httpStatus;
     private final String code;

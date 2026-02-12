@@ -14,7 +14,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
+import dev.langchain4j.store.embedding.filter.Filter;
+
 import java.util.List;
+
+import static dev.langchain4j.store.embedding.filter.MetadataFilterBuilder.metadataKey;
 
 @Slf4j
 @Service
@@ -23,7 +27,14 @@ import java.util.List;
 public class EmbeddingService {
 
     private final EmbeddingModel embeddingModel;
+
     private final EmbeddingStore<TextSegment> embeddingStore;
+
+    public void deleteBySourceId(Long sourceId) {
+        Filter filter = metadataKey("sourceId").isEqualTo(sourceId);
+        embeddingStore.removeAll(filter);
+        log.info("기존 벡터 삭제 완료: sourceId={}", sourceId);
+    }
 
     public void embed(ChunkedDocument chunkedDocument) {
         List<TextSegment> segments = chunkedDocument.chunks().stream()
