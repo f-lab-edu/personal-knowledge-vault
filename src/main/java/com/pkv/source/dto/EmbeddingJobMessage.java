@@ -1,4 +1,4 @@
-package com.pkv.worker.dto;
+package com.pkv.source.dto;
 
 public record EmbeddingJobMessage(
         Long sourceId,

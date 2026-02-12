@@ -3,19 +3,14 @@ package com.pkv.auth.controller;
 import com.pkv.auth.jwt.JwtTokenProvider;
 import com.pkv.member.domain.Member;
 import com.pkv.member.repository.MemberRepository;
-import com.pkv.source.service.EmbeddingJobProducer;
-import dev.langchain4j.data.segment.TextSegment;
-import dev.langchain4j.store.embedding.EmbeddingStore;
+import com.pkv.support.IntegrationTestSupport;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,11 +21,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
 @AutoConfigureMockMvc
-@ActiveProfiles("test")
 @Transactional
-class AuthControllerIntegrationTest {
+class AuthControllerIntegrationTest extends IntegrationTestSupport {
 
     @Autowired
     private MockMvc mockMvc;
@@ -40,12 +33,6 @@ class AuthControllerIntegrationTest {
 
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
-
-    @MockitoBean // 테스트 환경에 Kafka가 없으므로 Mock으로 대체
-    private EmbeddingJobProducer embeddingJobProducer;
-
-    @MockitoBean // 테스트 환경에 Qdrant가 없으므로 Mock으로 대체
-    private EmbeddingStore<TextSegment> embeddingStore;
 
     private Member testMember;
     private String validAccessToken;

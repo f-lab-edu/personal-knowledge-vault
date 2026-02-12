@@ -4,7 +4,7 @@ import com.pkv.common.config.KafkaConstants;
 import com.pkv.common.exception.ErrorCode;
 import com.pkv.common.exception.PkvException;
 import com.pkv.source.domain.Source;
-import com.pkv.worker.dto.EmbeddingJobMessage;
+import com.pkv.source.dto.EmbeddingJobMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;

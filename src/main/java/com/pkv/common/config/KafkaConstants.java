@@ -1,6 +1,5 @@
 package com.pkv.common.config;
 
-
 public final class KafkaConstants {
 
     public static final String EMBEDDING_JOB_TOPIC = "embedding-job";

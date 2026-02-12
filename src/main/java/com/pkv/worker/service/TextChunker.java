@@ -53,12 +53,10 @@ public class TextChunker {
         return new ChunkedDocument(chunks);
     }
 
-
     private int findCharOffset(String fullText, String segmentText, int searchFrom) {
         int charOffset = fullText.indexOf(segmentText, searchFrom);
         return charOffset >= 0 ? charOffset : fullText.indexOf(segmentText);
     }
-
 
     private int resolvePageNumber(List<PageOffset> pageOffsets, int charOffset) {
         if (charOffset < 0) {

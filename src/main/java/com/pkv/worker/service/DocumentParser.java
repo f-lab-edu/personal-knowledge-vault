@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.springframework.context.annotation.Profile;
@@ -16,13 +17,10 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Profile("worker")
+@RequiredArgsConstructor
 public class DocumentParser {
 
     private final S3FileStorage s3FileStorage;
-
-    public DocumentParser(S3FileStorage s3FileStorage) {
-        this.s3FileStorage = s3FileStorage;
-    }
 
     public ParsedDocument parse(String storagePath, String fileExtension) {
         byte[] bytes = s3FileStorage.downloadObject(storagePath);
@@ -34,7 +32,6 @@ public class DocumentParser {
                     "지원하지 않는 파일 형식: " + fileExtension);
         };
     }
-
 
     private ParsedDocument parsePdf(byte[] bytes) {
         try (PDDocument document = PDDocument.load(bytes)) {
@@ -57,7 +54,6 @@ public class DocumentParser {
                 String pageText = stripper.getText(document);
                 fullText.append(pageText);
             }
-
 
             // 스캔 이미지만 있는 PDF 등 텍스트가 없는 경우
             // TODO: OCR 기능 추가

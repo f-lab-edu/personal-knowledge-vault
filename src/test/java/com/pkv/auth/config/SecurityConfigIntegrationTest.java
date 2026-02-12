@@ -1,15 +1,10 @@
 package com.pkv.auth.config;
 
-import com.pkv.source.service.EmbeddingJobProducer;
-import dev.langchain4j.data.segment.TextSegment;
-import dev.langchain4j.store.embedding.EmbeddingStore;
+import com.pkv.support.IntegrationTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -17,19 +12,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
 @AutoConfigureMockMvc
-@ActiveProfiles("test")
-class SecurityConfigIntegrationTest {
+class SecurityConfigIntegrationTest extends IntegrationTestSupport {
 
     @Autowired
     private MockMvc mockMvc;
-
-    @MockitoBean
-    private EmbeddingJobProducer embeddingJobProducer;
-
-    @MockitoBean
-    private EmbeddingStore<TextSegment> embeddingStore;
 
     @Test
     @DisplayName("CORS preflight 요청이 정상적으로 처리된다")

@@ -5,7 +5,7 @@ import com.pkv.source.domain.Source;
 import com.pkv.source.domain.SourceStatus;
 import com.pkv.source.repository.SourceRepository;
 import com.pkv.worker.dto.ChunkedDocument;
-import com.pkv.worker.dto.EmbeddingJobMessage;
+import com.pkv.source.dto.EmbeddingJobMessage;
 import com.pkv.worker.dto.ParsedDocument;
 import com.pkv.worker.service.DocumentParser;
 import com.pkv.worker.service.EmbeddingService;

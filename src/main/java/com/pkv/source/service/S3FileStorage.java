@@ -62,7 +62,7 @@ public class S3FileStorage {
     }
 
     /**
-     * 현재 파일 크기 제한: 30BM
+     * 현재 파일 크기 제한: 30MB
      */
     public byte[] downloadObject(String key) {
         return s3Client.getObjectAsBytes(
