@@ -32,6 +32,7 @@ public class EmbeddingService {
                 .toList();
 
         try {
+            // TODO: 문서 크기가 커질 경우 embedAll/addAll을 코드 레벨에서 고정 크기 분할 처리 검토
             Response<List<Embedding>> response = embeddingModel.embedAll(segments);
             List<Embedding> embeddings = response.content();
             embeddingStore.addAll(embeddings, segments);
