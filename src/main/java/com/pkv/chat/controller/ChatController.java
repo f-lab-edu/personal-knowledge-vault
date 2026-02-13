@@ -2,7 +2,7 @@ package com.pkv.chat.controller;
 
 import com.pkv.chat.dto.ChatRequest;
 import com.pkv.chat.dto.ChatResponse;
-import com.pkv.chat.service.MockChatService;
+import com.pkv.chat.service.ChatService;
 import com.pkv.common.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Profile("api")
 public class ChatController {
 
-    private final MockChatService chatService;
+    private final ChatService chatService;
 
     @Operation(summary = "메시지 전송")
     @ApiResponses({
