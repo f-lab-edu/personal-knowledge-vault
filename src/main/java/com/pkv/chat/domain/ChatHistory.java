@@ -9,7 +9,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
@@ -37,12 +36,10 @@ public class ChatHistory {
     @JoinColumn(name = "session_id", nullable = false)
     private ChatSession session;
 
-    @Lob
-    @Column(name = "question", nullable = false)
+    @Column(name = "question", nullable = false, columnDefinition = "TEXT")
     private String question;
 
-    @Lob
-    @Column(name = "answer")
+    @Column(name = "answer", columnDefinition = "TEXT")
     private String answer;
 
     @Enumerated(EnumType.STRING)
@@ -55,14 +52,50 @@ public class ChatHistory {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    public static ChatHistory create(
+            Long memberId,
+            ChatSession session,
+            String question,
+            ChatHistoryStatus status,
+            String answer
+    ) {
+        return new ChatHistory(memberId, session, question, answer, status);
+    }
+
     @Builder
     public ChatHistory(Long memberId, ChatSession session, String question, String answer, ChatHistoryStatus status) {
         this.memberId = Objects.requireNonNull(memberId, "memberId is required");
         this.session = Objects.requireNonNull(session, "session is required");
-        this.question = Objects.requireNonNull(question, "question is required");
+        this.question = validateQuestion(question);
         this.answer = answer;
         this.status = Objects.requireNonNull(status, "status is required");
         this.createdAt = Instant.now();
         this.updatedAt = Instant.now();
+    }
+
+    public void markCompleted(String answer) {
+        updateStatus(ChatHistoryStatus.COMPLETED, answer);
+    }
+
+    public void markIrrelevant(String answer) {
+        updateStatus(ChatHistoryStatus.IRRELEVANT, answer);
+    }
+
+    public void markFailed(String answer) {
+        updateStatus(ChatHistoryStatus.FAILED, answer);
+    }
+
+    private void updateStatus(ChatHistoryStatus status, String answer) {
+        this.status = Objects.requireNonNull(status, "status is required");
+        this.answer = answer;
+        this.updatedAt = Instant.now();
+    }
+
+    private String validateQuestion(String question) {
+        String value = Objects.requireNonNull(question, "question is required").trim();
+        if (value.isEmpty()) {
+            throw new IllegalArgumentException("question is required");
+        }
+        return value;
     }
 }

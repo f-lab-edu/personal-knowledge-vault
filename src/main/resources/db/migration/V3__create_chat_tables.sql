@@ -28,7 +28,7 @@ CREATE TABLE chat_histories (
 
     question TEXT NOT NULL,
 
-    answer MEDIUMTEXT NULL,
+    answer TEXT NULL,
 
     status VARCHAR(20) NOT NULL,
 
@@ -37,8 +37,6 @@ CREATE TABLE chat_histories (
     updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
 
     PRIMARY KEY (id),
-    INDEX idx_chat_histories_member_created_at (member_id, created_at),
-    INDEX idx_chat_histories_session_created_at (session_id, created_at),
     CONSTRAINT fk_chat_histories_member FOREIGN KEY (member_id) REFERENCES users(id),
     CONSTRAINT fk_chat_histories_session FOREIGN KEY (session_id) REFERENCES chat_sessions(id)
 
