@@ -1,6 +1,7 @@
 package com.pkv.chat.repository;
 
 import com.pkv.chat.domain.ChatHistory;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -10,11 +11,15 @@ public interface ChatHistoryRepository extends JpaRepository<ChatHistory, Long> 
 
     List<ChatHistory> findTop5BySession_IdOrderByCreatedAtDesc(Long sessionId);
 
-    List<ChatHistory> findTop20ByMemberIdAndSession_SessionKeyOrderByCreatedAtDesc(Long memberId, String sessionKey);
+    List<ChatHistory> findByMemberIdAndSession_SessionKeyOrderByCreatedAtDesc(
+            Long memberId,
+            String sessionKey,
+            Pageable pageable
+    );
 
     List<ChatHistory> findBySession_IdOrderByCreatedAtAsc(Long sessionId);
 
-    Optional<ChatHistory> findByIdAndMemberId(Long historyId, Long memberId);
+    Optional<ChatHistory> findByIdAndMemberId(Long chatHistoryId, Long memberId);
 
     void deleteBySession_Id(Long sessionId);
 }

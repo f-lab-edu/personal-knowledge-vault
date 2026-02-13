@@ -1,5 +1,6 @@
 package com.pkv.chat.domain;
 
+import com.pkv.chat.dto.SourceReference;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -22,13 +23,15 @@ import java.util.Objects;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ChatHistorySource {
 
+    public static final int MAX_SNIPPET_LENGTH = 200;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "history_id", nullable = false)
-    private ChatHistory history;
+    private ChatHistory chatHistory;
 
     @Column(name = "source_id")
     private Long sourceId;
@@ -39,7 +42,7 @@ public class ChatHistorySource {
     @Column(name = "source_page_number")
     private Integer sourcePageNumber;
 
-    @Column(name = "snippet", nullable = false, length = 200)
+    @Column(name = "snippet", nullable = false, length = MAX_SNIPPET_LENGTH)
     private String snippet;
 
     @Column(name = "source_deleted", nullable = false)
@@ -48,25 +51,46 @@ public class ChatHistorySource {
     @Column(name = "display_order", nullable = false)
     private int displayOrder;
 
+    public static ChatHistorySource from(ChatHistory chatHistory, SourceReference sourceReference, int displayOrder) {
+        Objects.requireNonNull(sourceReference, "sourceReference is required");
+
+        return new ChatHistorySource(
+                chatHistory,
+                sourceReference.sourceId(),
+                sourceReference.fileName(),
+                sourceReference.pageNumber(),
+                sourceReference.snippet(),
+                displayOrder
+        );
+    }
+
     @Builder
     public ChatHistorySource(
-            ChatHistory history,
+            ChatHistory chatHistory,
             Long sourceId,
             String sourceFileName,
             Integer sourcePageNumber,
             String snippet,
             int displayOrder
     ) {
-        this.history = Objects.requireNonNull(history, "history is required");
+        this.chatHistory = Objects.requireNonNull(chatHistory, "chatHistory is required");
         this.sourceId = sourceId;
         this.sourceFileName = Objects.requireNonNull(sourceFileName, "sourceFileName is required");
         this.sourcePageNumber = sourcePageNumber;
-        this.snippet = Objects.requireNonNull(snippet, "snippet is required");
+        this.snippet = normalizeSnippet(snippet);
         this.sourceDeleted = false;
         this.displayOrder = displayOrder;
     }
 
     public void markDeleted() {
         this.sourceDeleted = true;
+    }
+
+    private String normalizeSnippet(String snippet) {
+        String value = snippet == null ? "" : snippet;
+        if (value.length() <= MAX_SNIPPET_LENGTH) {
+            return value;
+        }
+        return value.substring(0, MAX_SNIPPET_LENGTH);
     }
 }

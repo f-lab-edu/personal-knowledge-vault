@@ -1,7 +1,9 @@
 package com.pkv.chat.service;
 
+import com.pkv.chat.ChatPolicy;
 import com.pkv.chat.domain.ChatHistory;
-import com.pkv.chat.domain.ChatResultStatus;
+import com.pkv.chat.domain.ChatHistorySource;
+import com.pkv.chat.domain.ChatHistoryStatus;
 import com.pkv.chat.domain.ChatSession;
 import com.pkv.chat.dto.ChatRequest;
 import com.pkv.chat.dto.ChatResponse;
@@ -93,7 +95,7 @@ class ChatServiceTest {
         ChatResult result = chatService.sendMessageCore(MEMBER_ID, request);
 
         // then
-        assertThat(result.status()).isEqualTo(ChatResultStatus.COMPLETED);
+        assertThat(result.status()).isEqualTo(ChatHistoryStatus.COMPLETED);
         assertThat(result.response().sessionId()).isNull();
         assertThat(result.response().content()).isEqualTo("팩토리 패턴은 객체 생성 책임을 분리하는 패턴입니다.");
         assertThat(result.response().sources()).hasSize(1);
@@ -102,8 +104,8 @@ class ChatServiceTest {
         assertThat(source.sourceId()).isEqualTo(101L);
         assertThat(source.fileName()).isEqualTo("Design_Patterns.pdf");
         assertThat(source.pageNumber()).isEqualTo(12);
-        assertThat(source.snippet()).hasSize(200);
-        assertThat(source.snippet()).isEqualTo(longSnippet.substring(0, 200));
+        assertThat(source.snippet()).hasSize(ChatHistorySource.MAX_SNIPPET_LENGTH);
+        assertThat(source.snippet()).isEqualTo(longSnippet.substring(0, ChatHistorySource.MAX_SNIPPET_LENGTH));
     }
 
     @Test
@@ -117,7 +119,7 @@ class ChatServiceTest {
         ChatResult result = chatService.sendMessageCore(MEMBER_ID, request);
 
         // then
-        assertThat(result.status()).isEqualTo(ChatResultStatus.FAILED);
+        assertThat(result.status()).isEqualTo(ChatHistoryStatus.FAILED);
         assertThat(result.response().content()).isEqualTo("검색 가능한 파일이 없습니다");
         assertThat(result.response().sources()).isEmpty();
     }
@@ -171,7 +173,7 @@ class ChatServiceTest {
     }
 
     @Test
-    @DisplayName("세션 질문 수가 5회면 CHAT_SESSION_LIMIT_EXCEEDED 예외가 발생한다")
+    @DisplayName("세션 질문 수가 한도면 CHAT_SESSION_LIMIT_EXCEEDED 예외가 발생한다")
     void sendMessage_throwsWhenSessionQuestionLimitReached() {
         // given
         ChatRequest request = new ChatRequest("session-1", QUESTION);
@@ -180,7 +182,7 @@ class ChatServiceTest {
                 .sessionKey("session-1")
                 .title("title")
                 .build();
-        ReflectionTestUtils.setField(session, "questionCount", 5);
+        ReflectionTestUtils.setField(session, "questionCount", ChatPolicy.MAX_SESSION_QUESTION_COUNT);
 
         given(chatSessionRepository.findByMemberIdAndSessionKeyForUpdate(MEMBER_ID, "session-1"))
                 .willReturn(Optional.of(session));
@@ -188,7 +190,8 @@ class ChatServiceTest {
         // when & then
         assertThatThrownBy(() -> chatService.sendMessage(MEMBER_ID, request))
                 .isInstanceOf(PkvException.class)
-                .hasMessage("현재 세션 질문 한도(5회)에 도달했습니다. 새 대화를 시작해주세요");
+                .hasMessage("현재 세션 질문 한도(%d회)에 도달했습니다. 새 대화를 시작해주세요"
+                        .formatted(ChatPolicy.MAX_SESSION_QUESTION_COUNT));
     }
 
     private TextSegment createSegment(String text, String fileName, Integer pageNumber, Long sourceId) {

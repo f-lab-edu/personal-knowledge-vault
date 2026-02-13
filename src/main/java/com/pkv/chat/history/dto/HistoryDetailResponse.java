@@ -1,6 +1,4 @@
-package com.pkv.history.dto;
-
-import com.pkv.chat.dto.SourceReference;
+package com.pkv.chat.history.dto;
 
 import java.time.Instant;
 import java.util.List;
@@ -8,7 +6,7 @@ import java.util.List;
 public record HistoryDetailResponse(
         String question,
         String answer,
-        List<SourceReference> sources,
+        List<HistorySourceReference> sources,
         String status,
         Instant createdAt
 ) {

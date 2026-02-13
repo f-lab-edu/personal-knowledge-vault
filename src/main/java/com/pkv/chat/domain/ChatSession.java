@@ -42,11 +42,15 @@ public class ChatSession {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    public static ChatSession create(Long memberId, String sessionKey, String firstQuestion, int maxTitleLength) {
+        return new ChatSession(memberId, sessionKey, createTitleFrom(firstQuestion, maxTitleLength));
+    }
+
     @Builder
     public ChatSession(Long memberId, String sessionKey, String title) {
         this.memberId = Objects.requireNonNull(memberId, "memberId is required");
         this.sessionKey = Objects.requireNonNull(sessionKey, "sessionKey is required");
-        this.title = Objects.requireNonNull(title, "title is required");
+        this.title = validateTitle(title);
         this.questionCount = 0;
         this.createdAt = Instant.now();
         this.updatedAt = Instant.now();
@@ -59,5 +63,32 @@ public class ChatSession {
     public void incrementQuestionCount() {
         this.questionCount += 1;
         this.updatedAt = Instant.now();
+    }
+
+    public void assertCanAsk(int maxQuestionCount) {
+        if (this.questionCount >= maxQuestionCount) {
+            throw new IllegalStateException("session question limit reached");
+        }
+    }
+
+    public static String createTitleFrom(String question, int maxTitleLength) {
+        String trimmed = Objects.requireNonNull(question, "question is required").trim();
+        if (trimmed.isEmpty()) {
+            throw new IllegalArgumentException("question is required");
+        }
+
+        if (trimmed.length() <= maxTitleLength) {
+            return trimmed;
+        }
+
+        return trimmed.substring(0, maxTitleLength - 3) + "...";
+    }
+
+    private String validateTitle(String title) {
+        String value = Objects.requireNonNull(title, "title is required").trim();
+        if (value.isEmpty()) {
+            throw new IllegalArgumentException("title is required");
+        }
+        return value;
     }
 }

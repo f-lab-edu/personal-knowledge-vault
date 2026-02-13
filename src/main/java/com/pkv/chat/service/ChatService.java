@@ -1,9 +1,9 @@
 package com.pkv.chat.service;
 
+import com.pkv.chat.ChatPolicy;
 import com.pkv.chat.domain.ChatHistory;
 import com.pkv.chat.domain.ChatHistorySource;
 import com.pkv.chat.domain.ChatHistoryStatus;
-import com.pkv.chat.domain.ChatResultStatus;
 import com.pkv.chat.domain.ChatSession;
 import com.pkv.chat.dto.ChatRequest;
 import com.pkv.chat.dto.ChatResponse;
@@ -47,13 +47,6 @@ import static dev.langchain4j.store.embedding.filter.MetadataFilterBuilder.metad
 @Transactional(readOnly = true)
 public class ChatService {
 
-    private static final int MAX_RESULTS = 5;
-    private static final int MAX_SESSION_QUESTION_COUNT = 5;
-    private static final int MAX_CONTEXT_HISTORY = 5;
-    private static final int MAX_TITLE_LENGTH = 30;
-    private static final double MIN_SCORE = 0.75;
-    private static final int MAX_SNIPPET_LENGTH = 200;
-
     static final String NO_SEARCHABLE_SOURCE_MESSAGE = "검색 가능한 파일이 없습니다";
     static final String IRRELEVANT_MESSAGE = "관련 내용을 찾을 수 없습니다";
     static final String FAILED_MESSAGE = "답변 생성에 실패했습니다";
@@ -84,8 +77,8 @@ public class ChatService {
         List<ConversationContext> conversationContexts = loadConversationContexts(session.getId());
         ChatResult result = sendMessageCore(memberId, request.content(), conversationContexts);
 
-        ChatHistory history = saveHistory(memberId, session, request.content(), result);
-        saveHistorySources(history, result.response().sources());
+        ChatHistory chatHistory = saveChatHistory(memberId, session, request.content(), result);
+        saveChatHistorySources(chatHistory, result.response().sources());
         session.incrementQuestionCount();
 
         return new ChatResponse(session.getSessionKey(), result.response().content(), result.response().sources());
@@ -105,15 +98,15 @@ public class ChatService {
             Embedding queryEmbedding = embeddingModel.embed(question).content();
             EmbeddingSearchRequest searchRequest = EmbeddingSearchRequest.builder()
                     .queryEmbedding(queryEmbedding)
-                    .maxResults(MAX_RESULTS)
-                    .minScore(MIN_SCORE)
+                    .maxResults(ChatPolicy.MAX_RESULTS)
+                    .minScore(ChatPolicy.MIN_SCORE)
                     .filter(metadataKey("memberId").isEqualTo(memberId))
                     .build();
 
             List<SourceReference> sources = embeddingStore.search(searchRequest).matches().stream()
                     .map(EmbeddingMatch::embedded)
                     .filter(Objects::nonNull)
-                    .limit(MAX_RESULTS)
+                    .limit(ChatPolicy.MAX_RESULTS)
                     .map(this::toSourceReference)
                     .toList();
 
@@ -150,25 +143,19 @@ public class ChatService {
     }
 
     private ChatSession createSession(Long memberId, String firstQuestion) {
-        ChatSession session = ChatSession.builder()
-                .memberId(memberId)
-                .sessionKey(UUID.randomUUID().toString())
-                .title(createSessionTitle(firstQuestion))
-                .build();
+        ChatSession session = ChatSession.create(
+                memberId,
+                UUID.randomUUID().toString(),
+                firstQuestion,
+                ChatPolicy.MAX_TITLE_LENGTH
+        );
         return chatSessionRepository.save(session);
     }
 
-    private String createSessionTitle(String question) {
-        String trimmed = question.trim();
-        if (trimmed.length() <= MAX_TITLE_LENGTH) {
-            return trimmed;
-        }
-
-        return trimmed.substring(0, MAX_TITLE_LENGTH - 3) + "...";
-    }
-
     private void validateSessionQuestionLimit(ChatSession session) {
-        if (session.hasReachedLimit(MAX_SESSION_QUESTION_COUNT)) {
+        try {
+            session.assertCanAsk(ChatPolicy.MAX_SESSION_QUESTION_COUNT);
+        } catch (IllegalStateException e) {
             throw new PkvException(ErrorCode.CHAT_SESSION_LIMIT_EXCEEDED);
         }
     }
@@ -176,36 +163,29 @@ public class ChatService {
     private List<ConversationContext> loadConversationContexts(Long sessionId) {
         return chatHistoryRepository.findTop5BySession_IdOrderByCreatedAtDesc(sessionId).stream()
                 .sorted(Comparator.comparing(ChatHistory::getCreatedAt))
-                .limit(MAX_CONTEXT_HISTORY)
-                .map(history -> new ConversationContext(history.getQuestion(), history.getAnswer()))
+                .limit(ChatPolicy.MAX_CONTEXT_HISTORY)
+                .map(chatHistory -> new ConversationContext(chatHistory.getQuestion(), chatHistory.getAnswer()))
                 .toList();
     }
 
-    private ChatHistory saveHistory(Long memberId, ChatSession session, String question, ChatResult result) {
-        ChatHistory history = ChatHistory.builder()
-                .memberId(memberId)
-                .session(session)
-                .question(question)
-                .answer(result.response().content())
-                .status(ChatHistoryStatus.valueOf(result.status().name()))
-                .build();
-        return chatHistoryRepository.save(history);
+    private ChatHistory saveChatHistory(Long memberId, ChatSession session, String question, ChatResult result) {
+        ChatHistory chatHistory = ChatHistory.create(
+                memberId,
+                session,
+                question,
+                result.status(),
+                result.response().content()
+        );
+        return chatHistoryRepository.save(chatHistory);
     }
 
-    private void saveHistorySources(ChatHistory history, List<SourceReference> sources) {
+    private void saveChatHistorySources(ChatHistory chatHistory, List<SourceReference> sources) {
         if (sources.isEmpty()) {
             return;
         }
 
         List<ChatHistorySource> entities = IntStream.range(0, sources.size())
-                .mapToObj(index -> ChatHistorySource.builder()
-                        .history(history)
-                        .sourceId(sources.get(index).sourceId())
-                        .sourceFileName(sources.get(index).fileName())
-                        .sourcePageNumber(sources.get(index).pageNumber())
-                        .snippet(sources.get(index).snippet())
-                        .displayOrder(index)
-                        .build())
+                .mapToObj(index -> ChatHistorySource.from(chatHistory, sources.get(index), index))
                 .toList();
 
         chatHistorySourceRepository.saveAll(entities);
@@ -242,10 +222,10 @@ public class ChatService {
         if (text == null || text.isBlank()) {
             return "";
         }
-        if (text.length() <= MAX_SNIPPET_LENGTH) {
+        if (text.length() <= ChatHistorySource.MAX_SNIPPET_LENGTH) {
             return text;
         }
-        return text.substring(0, MAX_SNIPPET_LENGTH);
+        return text.substring(0, ChatHistorySource.MAX_SNIPPET_LENGTH);
     }
 
     private String buildUserPrompt(String question, List<SourceReference> sources, List<ConversationContext> contexts) {
@@ -302,15 +282,15 @@ public class ChatService {
     }
 
     private ChatResult completed(String answer, List<SourceReference> sources) {
-        return new ChatResult(ChatResultStatus.COMPLETED, new ChatResponse(null, answer, sources));
+        return new ChatResult(ChatHistoryStatus.COMPLETED, new ChatResponse(null, answer, sources));
     }
 
     private ChatResult irrelevant() {
-        return new ChatResult(ChatResultStatus.IRRELEVANT, new ChatResponse(null, IRRELEVANT_MESSAGE, List.of()));
+        return new ChatResult(ChatHistoryStatus.IRRELEVANT, new ChatResponse(null, IRRELEVANT_MESSAGE, List.of()));
     }
 
     private ChatResult failed(String message) {
-        return new ChatResult(ChatResultStatus.FAILED, new ChatResponse(null, message, List.of()));
+        return new ChatResult(ChatHistoryStatus.FAILED, new ChatResponse(null, message, List.of()));
     }
 
     private record ConversationContext(String question, String answer) {

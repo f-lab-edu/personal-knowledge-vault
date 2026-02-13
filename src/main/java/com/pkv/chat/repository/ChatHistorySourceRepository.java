@@ -8,9 +8,9 @@ import java.util.List;
 
 public interface ChatHistorySourceRepository extends JpaRepository<ChatHistorySource, Long> {
 
-    List<ChatHistorySource> findByHistory_IdOrderByDisplayOrderAsc(Long historyId);
+    List<ChatHistorySource> findByChatHistory_IdOrderByDisplayOrderAsc(Long chatHistoryId);
 
-    void deleteByHistory_Id(Long historyId);
+    void deleteByChatHistory_Id(Long chatHistoryId);
 
-    void deleteByHistory_IdIn(Collection<Long> historyIds);
+    void deleteByChatHistory_IdIn(Collection<Long> chatHistoryIds);
 }
