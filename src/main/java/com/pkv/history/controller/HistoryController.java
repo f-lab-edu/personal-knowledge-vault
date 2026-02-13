@@ -4,7 +4,7 @@ import com.pkv.common.dto.ApiResponse;
 import com.pkv.history.dto.HistoryDetailResponse;
 import com.pkv.history.dto.HistoryItemSummaryResponse;
 import com.pkv.history.dto.SessionSummaryResponse;
-import com.pkv.history.service.MockHistoryService;
+import com.pkv.history.service.HistoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,7 +23,7 @@ import java.util.List;
 @Profile("api")
 public class HistoryController {
 
-    private final MockHistoryService historyService;
+    private final HistoryService historyService;
 
     @Operation(summary = "세션 목록 조회")
     @ApiResponses({

@@ -1,4 +1,9 @@
 package com.pkv.chat.dto;
 
-public record SourceReference(String fileName, Integer pageNumber, String snippet) {
+public record SourceReference(
+        Long sourceId,
+        String fileName,
+        Integer pageNumber,
+        String snippet
+) {
 }
