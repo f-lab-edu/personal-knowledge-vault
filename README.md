@@ -8,6 +8,18 @@
 - 멀티턴 대화를 통한 맥락 유지
 - 질문/답변 히스토리 관리
 
+## 로컬 실행
+
+- 환경 변수: `.env.local` (샘플은 `.env.example`)
+- 인프라 + 앱 실행:
+  ```bash
+  docker compose --profile infra --profile app up -d
+  ```
+- 모니터링 포함:
+  ```bash
+  docker compose --profile infra --profile app --profile monitoring up -d
+  ```
+
 ### 주요 컴포넌트
 
 | 컴포넌트          | 역할 |

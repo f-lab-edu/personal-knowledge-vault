@@ -10,6 +10,7 @@ import com.pkv.source.dto.SourceResponse;
 import com.pkv.common.service.EmbeddingRepository;
 import com.pkv.source.repository.SourceRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
+@Profile("api")
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class SourceService {

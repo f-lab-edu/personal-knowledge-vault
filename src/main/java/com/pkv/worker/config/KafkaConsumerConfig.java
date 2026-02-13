@@ -1,6 +1,6 @@
 package com.pkv.worker.config;
 
-import com.pkv.worker.consumer.EmbeddingPipelineConsumer;
+import com.pkv.worker.consumer.EmbeddingPipelineErrorHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.kafka.ConcurrentKafkaListenerContainerFactoryConfigurer;
 import org.springframework.context.annotation.Bean;
@@ -16,7 +16,7 @@ import org.springframework.util.backoff.ExponentialBackOff;
 @RequiredArgsConstructor
 public class KafkaConsumerConfig {
 
-    private final EmbeddingPipelineConsumer embeddingPipelineConsumer;
+    private final EmbeddingPipelineErrorHandler embeddingPipelineErrorHandler;
 
     @Bean
     public ConcurrentKafkaListenerContainerFactory<?, ?> embeddingKafkaListenerContainerFactory(
@@ -30,7 +30,7 @@ public class KafkaConsumerConfig {
         ExponentialBackOff exponentialBackOff = new ExponentialBackOff(1000L, 2.0);
         exponentialBackOff.setMaxAttempts(2);
         DefaultErrorHandler errorHandler = new DefaultErrorHandler(
-                embeddingPipelineConsumer::recoverFailedEmbedding,
+                embeddingPipelineErrorHandler::recoverFailedEmbedding,
                 exponentialBackOff
         );
         factory.setCommonErrorHandler(errorHandler);

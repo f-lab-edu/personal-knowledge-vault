@@ -13,7 +13,6 @@ import com.pkv.worker.service.EmbeddingService;
 import com.pkv.worker.service.TextChunker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.context.annotation.Profile;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
@@ -56,19 +55,6 @@ public class EmbeddingPipelineConsumer {
         source.complete();
         sourceRepository.save(source);
         log.info("임베딩 파이프라인 완료: sourceId={}", message.sourceId());
-    }
-
-    public void recoverFailedEmbedding(ConsumerRecord<?, ?> record, Exception exception) {
-        EmbeddingJobMessage message = (EmbeddingJobMessage) record.value();
-        log.error("임베딩 파이프라인 재시도 소진: sourceId={}", message.sourceId(), exception);
-
-        sourceRepository.findById(message.sourceId()).ifPresent(source -> {
-            if (source.getStatus() == SourceStatus.PROCESSING) {
-                source.fail();
-                sourceRepository.save(source);
-                log.info("Source 상태를 FAILED로 변경: sourceId={}", message.sourceId());
-            }
-        });
     }
 
     private void executePipeline(EmbeddingJobMessage message) {

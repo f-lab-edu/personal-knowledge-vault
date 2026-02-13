@@ -8,7 +8,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @SpringBootTest
-@ActiveProfiles({"test", "api"})
+@ActiveProfiles({"api", "test"})
 public abstract class IntegrationTestSupport {
 
     @MockitoBean

@@ -30,11 +30,6 @@ spring:
 
 jwt:
   secret: test-jwt-secret-key-for-testing-purposes-only-32-chars-minimum
-  access-token-expiry: 1800000
-  refresh-token-expiry: 604800000
-
-app:
-  frontend-url: http://localhost:5173
 
 cloud:
   aws:
@@ -46,6 +41,4 @@ cloud:
       secret-key: mock-secret-key
 
 qdrant:
-  host: localhost
-  port: 6334
   collection-name: test_vectors

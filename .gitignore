@@ -31,6 +31,8 @@ out/
 
 ### Environment Variables ###
 .env
+.env.local
+frontend/.env.local
 
 .claude
 

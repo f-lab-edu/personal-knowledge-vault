@@ -29,7 +29,7 @@ services:
       - pkv-network
 
   kafka:
-    image: bitnami/kafka:3.7
+    image: bitnamilegacy/kafka:3.7.1
     container_name: pkv-kafka
     restart: unless-stopped
     profiles:
@@ -38,14 +38,21 @@ services:
       KAFKA_CFG_NODE_ID: 1
       KAFKA_CFG_PROCESS_ROLES: broker,controller
       KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
-      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
-      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
       KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
     ports:
-      - "9092:9092"
+      - "9094:9094"
     volumes:
       - kafka_data:/bitnami/kafka
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - pkv-network
 
@@ -60,6 +67,12 @@ services:
       - "6334:6334"
     volumes:
       - qdrant_data:/qdrant/storage
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/6333'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       - pkv-network
 
@@ -72,15 +85,41 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+      kafka:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    env_file: .env.local
     environment:
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-api}
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${DB_NAME:-pkv}
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-root}
+      SPRING_PROFILES_ACTIVE: local,api
+      DB_HOST: mysql
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       QDRANT_HOST: qdrant
     ports:
       - "${APP_PORT:-8080}:8080"
+    networks:
+      - pkv-network
+
+  worker:
+    build: .
+    container_name: pkv-worker
+    restart: unless-stopped
+    profiles:
+      - app
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    env_file: .env.local
+    environment:
+      SPRING_PROFILES_ACTIVE: local,worker
+      SERVER_PORT: 8081
+      DB_HOST: mysql
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      QDRANT_HOST: qdrant
     networks:
       - pkv-network
 
