@@ -1,6 +1,6 @@
 package com.pkv.chat.domain;
 
-import com.pkv.chat.dto.SourceReference;
+import com.pkv.chat.dto.ChatSourceResponse;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -48,15 +48,15 @@ public class ChatHistorySource {
     @Column(name = "display_order", nullable = false)
     private int displayOrder;
 
-    public static ChatHistorySource from(ChatHistory chatHistory, SourceReference sourceReference, int displayOrder) {
-        Objects.requireNonNull(sourceReference, "sourceReference is required");
+    public static ChatHistorySource from(ChatHistory chatHistory, ChatSourceResponse sourceResponse, int displayOrder) {
+        Objects.requireNonNull(sourceResponse, "sourceResponse is required");
 
         return new ChatHistorySource(
                 chatHistory,
-                sourceReference.sourceId(),
-                sourceReference.fileName(),
-                sourceReference.pageNumber(),
-                sourceReference.snippet(),
+                sourceResponse.sourceId(),
+                sourceResponse.fileName(),
+                sourceResponse.pageNumber(),
+                sourceResponse.snippet(),
                 displayOrder
         );
     }

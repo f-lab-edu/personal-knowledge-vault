@@ -13,13 +13,14 @@ public interface ChatHistoryRepository extends JpaRepository<ChatHistory, Long> 
 
     List<ChatHistory> findByMemberIdAndSession_SessionKeyOrderByCreatedAtDesc(
             Long memberId,
+            String sessionKey
+    );
+
+    List<ChatHistory> findByMemberIdAndSession_SessionKeyOrderByCreatedAtDesc(
+            Long memberId,
             String sessionKey,
             Pageable pageable
     );
 
-    List<ChatHistory> findBySession_IdOrderByCreatedAtAsc(Long sessionId);
-
     Optional<ChatHistory> findByIdAndMemberId(Long chatHistoryId, Long memberId);
-
-    void deleteBySession_Id(Long sessionId);
 }

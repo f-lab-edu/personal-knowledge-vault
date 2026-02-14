@@ -1,7 +1,7 @@
 package com.pkv.chat.controller;
 
-import com.pkv.chat.dto.ChatRequest;
-import com.pkv.chat.dto.ChatResponse;
+import com.pkv.chat.dto.ChatSendRequest;
+import com.pkv.chat.dto.ChatSendResponse;
 import com.pkv.chat.service.ChatService;
 import com.pkv.common.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -38,10 +38,10 @@ public class ChatController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패")
     })
     @PostMapping("/messages")
-    public ResponseEntity<ApiResponse<ChatResponse>> sendMessage(
+    public ResponseEntity<ApiResponse<ChatSendResponse>> sendMessage(
             @AuthenticationPrincipal Long memberId,
-            @Valid @RequestBody ChatRequest request) {
-        ChatResponse response = chatService.sendMessage(memberId, request);
+            @Valid @RequestBody ChatSendRequest request) {
+        ChatSendResponse response = chatService.sendMessage(memberId, request);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

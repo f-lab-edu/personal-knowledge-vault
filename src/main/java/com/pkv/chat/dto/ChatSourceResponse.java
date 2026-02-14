@@ -1,6 +1,6 @@
 package com.pkv.chat.dto;
 
-public record HistorySourceReference(
+public record ChatSourceResponse(
         Long sourceId,
         String fileName,
         int pageNumber,

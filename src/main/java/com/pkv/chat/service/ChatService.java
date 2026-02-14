@@ -5,9 +5,9 @@ import com.pkv.chat.domain.ChatHistory;
 import com.pkv.chat.domain.ChatHistorySource;
 import com.pkv.chat.domain.ChatResponseStatus;
 import com.pkv.chat.domain.ChatSession;
-import com.pkv.chat.dto.ChatRequest;
-import com.pkv.chat.dto.ChatResponse;
-import com.pkv.chat.dto.SourceReference;
+import com.pkv.chat.dto.ChatSendRequest;
+import com.pkv.chat.dto.ChatSendResponse;
+import com.pkv.chat.dto.ChatSourceResponse;
 import com.pkv.chat.repository.ChatHistoryRepository;
 import com.pkv.chat.repository.ChatHistorySourceRepository;
 import com.pkv.chat.repository.ChatSessionRepository;
@@ -69,7 +69,7 @@ public class ChatService {
     private final ChatHistorySourceRepository chatHistorySourceRepository;
 
     @Transactional
-    public ChatResponse sendMessage(Long memberId, ChatRequest request) {
+    public ChatSendResponse sendMessage(Long memberId, ChatSendRequest request) {
         ChatSession session = resolveSession(memberId, request);
         if (session.isQuestionLimitReached(ChatPolicy.MAX_SESSION_QUESTION_COUNT)) {
             throw new PkvException(ErrorCode.CHAT_SESSION_LIMIT_EXCEEDED);
@@ -82,7 +82,7 @@ public class ChatService {
         saveChatHistorySources(chatHistory, result.sources());
         session.incrementQuestionCount();
 
-        return new ChatResponse(session.getSessionKey(), result.content(), result.sources());
+        return new ChatSendResponse(session.getSessionKey(), result.content(), result.sources());
     }
 
     private ChatResult sendMessageCore(Long memberId, String question, List<ConversationContext> conversationContexts) {
@@ -99,10 +99,10 @@ public class ChatService {
                     .filter(metadataKey("memberId").isEqualTo(memberId))
                     .build();
 
-            List<SourceReference> sources = embeddingStore.search(searchRequest).matches().stream()
+            List<ChatSourceResponse> sources = embeddingStore.search(searchRequest).matches().stream()
                     .map(EmbeddingMatch::embedded)
                     .filter(Objects::nonNull)
-                    .map(this::toSourceReference)
+                    .map(this::toSourceResponse)
                     .toList();
 
             if (sources.isEmpty()) {
@@ -128,7 +128,7 @@ public class ChatService {
         }
     }
 
-    private ChatSession resolveSession(Long memberId, ChatRequest request) {
+    private ChatSession resolveSession(Long memberId, ChatSendRequest request) {
         if (!StringUtils.hasText(request.sessionId())) {
             return createSession(memberId, request.content());
         }
@@ -166,7 +166,7 @@ public class ChatService {
         return chatHistoryRepository.save(chatHistory);
     }
 
-    private void saveChatHistorySources(ChatHistory chatHistory, List<SourceReference> sources) {
+    private void saveChatHistorySources(ChatHistory chatHistory, List<ChatSourceResponse> sources) {
         if (sources.isEmpty()) {
             return;
         }
@@ -178,13 +178,13 @@ public class ChatService {
         chatHistorySourceRepository.saveAll(entities);
     }
 
-    private SourceReference toSourceReference(TextSegment segment) {
+    private ChatSourceResponse toSourceResponse(TextSegment segment) {
         String fileName = segment.metadata() != null ? segment.metadata().getString("fileName") : null;
         Integer pageNumber = segment.metadata() != null ? segment.metadata().getInteger("pageNumber") : null;
         String snippet = truncateSnippet(segment.text());
         Long sourceId = extractSourceId(segment);
 
-        return new SourceReference(
+        return new ChatSourceResponse(
                 sourceId,
                 fileName == null || fileName.isBlank() ? UNKNOWN_FILE_NAME : fileName,
                 pageNumber == null || pageNumber <= 0 ? DEFAULT_PAGE_NUMBER : pageNumber,
@@ -215,7 +215,7 @@ public class ChatService {
         return text.substring(0, ChatHistorySource.MAX_SNIPPET_LENGTH);
     }
 
-    private String buildUserPrompt(String question, List<SourceReference> sources, List<ConversationContext> contexts) {
+    private String buildUserPrompt(String question, List<ChatSourceResponse> sources, List<ConversationContext> contexts) {
         String sourceBlock = IntStream.range(0, sources.size())
                 .mapToObj(index -> formatSource(index + 1, sources.get(index)))
                 .collect(Collectors.joining("\n"));
@@ -258,7 +258,7 @@ public class ChatService {
                 """.formatted(order, context.question(), answer);
     }
 
-    private String formatSource(int order, SourceReference source) {
+    private String formatSource(int order, ChatSourceResponse source) {
         return "%d. file=%s, page=%s, snippet=%s".formatted(
                 order,
                 source.fileName(),
@@ -267,7 +267,7 @@ public class ChatService {
         );
     }
 
-    private ChatResult completed(String answer, List<SourceReference> sources) {
+    private ChatResult completed(String answer, List<ChatSourceResponse> sources) {
         return new ChatResult(ChatResponseStatus.COMPLETED, answer, sources);
     }
 
@@ -279,7 +279,7 @@ public class ChatService {
         return new ChatResult(ChatResponseStatus.FAILED, message, List.of());
     }
 
-    private record ChatResult(ChatResponseStatus status, String content, List<SourceReference> sources) {
+    private record ChatResult(ChatResponseStatus status, String content, List<ChatSourceResponse> sources) {
     }
 
     private record ConversationContext(String question, String answer) {

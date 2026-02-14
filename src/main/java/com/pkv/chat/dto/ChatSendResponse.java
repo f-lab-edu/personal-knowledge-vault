@@ -2,9 +2,9 @@ package com.pkv.chat.dto;
 
 import java.util.List;
 
-public record ChatResponse(
+public record ChatSendResponse(
         String sessionId,
         String content,
-        List<SourceReference> sources
+        List<ChatSourceResponse> sources
 ) {
 }
