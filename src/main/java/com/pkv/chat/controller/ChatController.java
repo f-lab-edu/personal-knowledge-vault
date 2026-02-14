@@ -27,9 +27,9 @@ public class ChatController {
     private final ChatService chatService;
 
     /**
-     * sessionId가 비어 있으면 서버가 새 세션을 만들고, 생성된 sessionId를 응답으로 반환한다.
-     * sessionId가 있으면 같은 세션으로 처리하며,
-     * 세션 질문 수 한도(ChatPolicy.MAX_SESSION_QUESTION_COUNT)를 넘기면 Q002를 반환한다.
+     * 사용자의 질문을 기반으로 답변을 반환한다.
+     * sessionId가 비어 있으면 서버가 새 세션을 만들고, 생성된 sessionId를 함께 응답.
+     * 기존 sessionId가 있으면 같은 세션의 이전 대화 중 최대 ChatPolicy.MAX_CONTEXT_HISTORY개를 컨텍스트로 함께 질문에 반영.
      */
     @Operation(summary = "메시지 전송")
     @ApiResponses({

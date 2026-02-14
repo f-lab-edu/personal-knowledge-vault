@@ -1,12 +1,13 @@
-package com.pkv.chat.history.service;
+package com.pkv.chat.service;
 
+import com.pkv.chat.ChatPolicy;
 import com.pkv.chat.domain.ChatHistory;
 import com.pkv.chat.domain.ChatHistorySource;
-import com.pkv.chat.history.HistoryPolicy;
-import com.pkv.chat.history.dto.HistoryDetailResponse;
-import com.pkv.chat.history.dto.HistoryItemSummaryResponse;
-import com.pkv.chat.history.dto.HistorySourceReference;
-import com.pkv.chat.history.dto.SessionSummaryResponse;
+import com.pkv.chat.domain.ChatSession;
+import com.pkv.chat.dto.HistoryDetailResponse;
+import com.pkv.chat.dto.HistoryItemSummaryResponse;
+import com.pkv.chat.dto.HistorySourceReference;
+import com.pkv.chat.dto.SessionSummaryResponse;
 import com.pkv.chat.repository.ChatHistoryRepository;
 import com.pkv.chat.repository.ChatHistorySourceRepository;
 import com.pkv.chat.repository.ChatSessionRepository;
@@ -24,7 +25,8 @@ import java.util.List;
 @Profile("api")
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class HistoryQueryService {
+public class ChatHistoryService {
+    private static final int DEFAULT_PAGE_NUMBER = 1;
 
     private final ChatSessionRepository chatSessionRepository;
     private final ChatHistoryRepository chatHistoryRepository;
@@ -45,7 +47,7 @@ public class HistoryQueryService {
         return chatHistoryRepository.findByMemberIdAndSession_SessionKeyOrderByCreatedAtDesc(
                         memberId,
                         sessionId,
-                        PageRequest.of(0, HistoryPolicy.MAX_SESSION_DETAIL_ITEMS)
+                        PageRequest.of(0, ChatPolicy.MAX_SESSION_DETAIL_ITEMS)
                 )
                 .stream()
                 .map(chatHistory -> new HistoryItemSummaryResponse(
@@ -76,11 +78,42 @@ public class HistoryQueryService {
         );
     }
 
+    @Transactional
+    public void deleteHistory(Long memberId, Long chatHistoryId) {
+        if (chatHistoryRepository.findByIdAndMemberId(chatHistoryId, memberId).isEmpty()) {
+            throw new PkvException(ErrorCode.HISTORY_NOT_FOUND);
+        }
+
+        chatHistorySourceRepository.deleteByChatHistory_Id(chatHistoryId);
+        chatHistoryRepository.deleteById(chatHistoryId);
+    }
+
+    @Transactional
+    public void deleteSession(Long memberId, String sessionId) {
+        ChatSession session = chatSessionRepository.findByMemberIdAndSessionKey(memberId, sessionId)
+                .orElse(null);
+
+        if (session == null) {
+            return;
+        }
+
+        List<Long> chatHistoryIds = chatHistoryRepository.findBySession_IdOrderByCreatedAtAsc(session.getId()).stream()
+                .map(ChatHistory::getId)
+                .toList();
+
+        if (!chatHistoryIds.isEmpty()) {
+            chatHistorySourceRepository.deleteByChatHistory_IdIn(chatHistoryIds);
+        }
+        chatHistoryRepository.deleteBySession_Id(session.getId());
+        chatSessionRepository.delete(session);
+    }
+
     private HistorySourceReference toSourceReference(ChatHistorySource source) {
+        Integer pageNumber = source.getSourcePageNumber();
         return new HistorySourceReference(
                 source.getSourceId(),
                 source.getSourceFileName(),
-                source.getSourcePageNumber(),
+                pageNumber == null || pageNumber <= 0 ? DEFAULT_PAGE_NUMBER : pageNumber,
                 source.getSnippet()
         );
     }

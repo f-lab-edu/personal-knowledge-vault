@@ -1,10 +1,9 @@
-package com.pkv.chat.history.controller;
+package com.pkv.chat.controller;
 
-import com.pkv.chat.history.dto.HistoryDetailResponse;
-import com.pkv.chat.history.dto.HistoryItemSummaryResponse;
-import com.pkv.chat.history.dto.SessionSummaryResponse;
-import com.pkv.chat.history.service.HistoryCommandService;
-import com.pkv.chat.history.service.HistoryQueryService;
+import com.pkv.chat.dto.HistoryDetailResponse;
+import com.pkv.chat.dto.HistoryItemSummaryResponse;
+import com.pkv.chat.dto.SessionSummaryResponse;
+import com.pkv.chat.service.ChatHistoryService;
 import com.pkv.common.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -13,7 +12,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -22,10 +25,9 @@ import java.util.List;
 @RequestMapping("/api/chat-histories")
 @RequiredArgsConstructor
 @Profile("api")
-public class HistoryController {
+public class ChatHistoryController {
 
-    private final HistoryQueryService historyQueryService;
-    private final HistoryCommandService historyCommandService;
+    private final ChatHistoryService chatHistoryService;
 
     /**
      * 프론트엔드가 히스토리 패널의 세션 목록을 불러올 때 호출한다.
@@ -39,13 +41,13 @@ public class HistoryController {
     @GetMapping("/sessions")
     public ResponseEntity<ApiResponse<List<SessionSummaryResponse>>> getSessionList(
             @AuthenticationPrincipal Long memberId) {
-        return ResponseEntity.ok(ApiResponse.success(historyQueryService.getSessionList(memberId)));
+        return ResponseEntity.ok(ApiResponse.success(chatHistoryService.getSessionList(memberId)));
     }
 
     /**
      * 프론트엔드가 선택한 세션의 질문 목록을 불러올 때 호출한다.
      * 회원 범위와 sessionId를 함께 조건으로 조회하고,
-     * 최신순 최대 한도(HistoryPolicy.MAX_SESSION_DETAIL_ITEMS)를 반환한다.
+     * 최신순 최대 한도(ChatPolicy.MAX_SESSION_DETAIL_ITEMS)를 반환한다.
      * 일치하는 데이터가 없으면 빈 목록을 반환한다.
      */
     @Operation(summary = "세션 내 질문 목록 조회")
@@ -57,7 +59,7 @@ public class HistoryController {
     public ResponseEntity<ApiResponse<List<HistoryItemSummaryResponse>>> getSessionDetail(
             @AuthenticationPrincipal Long memberId,
             @PathVariable String sessionId) {
-        return ResponseEntity.ok(ApiResponse.success(historyQueryService.getSessionDetail(memberId, sessionId)));
+        return ResponseEntity.ok(ApiResponse.success(chatHistoryService.getSessionDetail(memberId, sessionId)));
     }
 
     /**
@@ -74,7 +76,7 @@ public class HistoryController {
     public ResponseEntity<ApiResponse<HistoryDetailResponse>> getHistoryDetail(
             @AuthenticationPrincipal Long memberId,
             @PathVariable Long chatHistoryId) {
-        return ResponseEntity.ok(ApiResponse.success(historyQueryService.getHistoryDetail(memberId, chatHistoryId)));
+        return ResponseEntity.ok(ApiResponse.success(chatHistoryService.getHistoryDetail(memberId, chatHistoryId)));
     }
 
     /**
@@ -91,7 +93,7 @@ public class HistoryController {
     public ResponseEntity<ApiResponse<Void>> deleteHistory(
             @AuthenticationPrincipal Long memberId,
             @PathVariable Long chatHistoryId) {
-        historyCommandService.deleteHistory(memberId, chatHistoryId);
+        chatHistoryService.deleteHistory(memberId, chatHistoryId);
         return ResponseEntity.ok(ApiResponse.success());
     }
 
@@ -109,7 +111,7 @@ public class HistoryController {
     public ResponseEntity<ApiResponse<Void>> deleteSession(
             @AuthenticationPrincipal Long memberId,
             @PathVariable String sessionId) {
-        historyCommandService.deleteSession(memberId, sessionId);
+        chatHistoryService.deleteSession(memberId, sessionId);
         return ResponseEntity.ok(ApiResponse.success());
     }
 }

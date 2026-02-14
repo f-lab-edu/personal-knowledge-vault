@@ -42,8 +42,8 @@ public class ChatSession {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    public static ChatSession create(Long memberId, String sessionKey, String firstQuestion, int maxTitleLength) {
-        return new ChatSession(memberId, sessionKey, createTitleFrom(firstQuestion, maxTitleLength));
+    public static ChatSession create(Long memberId, String sessionKey, String firstQuestion, int maxSessionTitleLength) {
+        return new ChatSession(memberId, sessionKey, createTitleFrom(firstQuestion, maxSessionTitleLength));
     }
 
     @Builder
@@ -56,32 +56,26 @@ public class ChatSession {
         this.updatedAt = Instant.now();
     }
 
-    public boolean hasReachedLimit(int maxQuestionCount) {
-        return this.questionCount >= maxQuestionCount;
-    }
-
     public void incrementQuestionCount() {
         this.questionCount += 1;
         this.updatedAt = Instant.now();
     }
 
-    public void assertCanAsk(int maxQuestionCount) {
-        if (this.questionCount >= maxQuestionCount) {
-            throw new IllegalStateException("session question limit reached");
-        }
+    public boolean isQuestionLimitReached(int maxQuestionCount) {
+        return this.questionCount >= maxQuestionCount;
     }
 
-    public static String createTitleFrom(String question, int maxTitleLength) {
+    public static String createTitleFrom(String question, int maxSessionTitleLength) {
         String trimmed = Objects.requireNonNull(question, "question is required").trim();
         if (trimmed.isEmpty()) {
             throw new IllegalArgumentException("question is required");
         }
 
-        if (trimmed.length() <= maxTitleLength) {
+        if (trimmed.length() <= maxSessionTitleLength) {
             return trimmed;
         }
 
-        return trimmed.substring(0, maxTitleLength - 3) + "...";
+        return trimmed.substring(0, maxSessionTitleLength - 3) + "...";
     }
 
     private String validateTitle(String title) {

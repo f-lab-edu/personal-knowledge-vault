@@ -3,7 +3,7 @@ package com.pkv.chat.service;
 import com.pkv.chat.ChatPolicy;
 import com.pkv.chat.domain.ChatHistory;
 import com.pkv.chat.domain.ChatHistorySource;
-import com.pkv.chat.domain.ChatHistoryStatus;
+import com.pkv.chat.domain.ChatResponseStatus;
 import com.pkv.chat.domain.ChatSession;
 import com.pkv.chat.dto.ChatRequest;
 import com.pkv.chat.dto.ChatResponse;
@@ -27,6 +27,7 @@ import dev.langchain4j.store.embedding.EmbeddingStore;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -47,11 +48,12 @@ import static dev.langchain4j.store.embedding.filter.MetadataFilterBuilder.metad
 @Transactional(readOnly = true)
 public class ChatService {
 
-    static final String NO_SEARCHABLE_SOURCE_MESSAGE = "검색 가능한 파일이 없습니다";
-    static final String IRRELEVANT_MESSAGE = "관련 내용을 찾을 수 없습니다";
+    static final String NO_SEARCHABLE_SOURCE_MESSAGE = "임베딩한 파일이 없습니다";
+    static final String IRRELEVANT_MESSAGE = "질문과 관련된 내용을 찾을 수 없습니다";
     static final String FAILED_MESSAGE = "답변 생성에 실패했습니다";
 
     private static final String UNKNOWN_FILE_NAME = "알 수 없는 파일";
+    private static final int DEFAULT_PAGE_NUMBER = 1;
 
     private static final String SYSTEM_PROMPT = """
             너는 사용자가 업로드한 문서를 기반으로 답변하는 어시스턴트다.
@@ -68,25 +70,19 @@ public class ChatService {
 
     @Transactional
     public ChatResponse sendMessage(Long memberId, ChatRequest request) {
-        Objects.requireNonNull(memberId, "memberId is required");
-        Objects.requireNonNull(request, "request is required");
-
         ChatSession session = resolveSession(memberId, request);
-        validateSessionQuestionLimit(session);
+        if (session.isQuestionLimitReached(ChatPolicy.MAX_SESSION_QUESTION_COUNT)) {
+            throw new PkvException(ErrorCode.CHAT_SESSION_LIMIT_EXCEEDED);
+        }
 
-        List<ConversationContext> conversationContexts = loadConversationContexts(session.getId());
+        List<ConversationContext> conversationContexts = loadConversationContexts(session);
         ChatResult result = sendMessageCore(memberId, request.content(), conversationContexts);
 
         ChatHistory chatHistory = saveChatHistory(memberId, session, request.content(), result);
-        saveChatHistorySources(chatHistory, result.response().sources());
+        saveChatHistorySources(chatHistory, result.sources());
         session.incrementQuestionCount();
 
-        return new ChatResponse(session.getSessionKey(), result.response().content(), result.response().sources());
-    }
-
-    ChatResult sendMessageCore(Long memberId, ChatRequest request) {
-        Objects.requireNonNull(request, "request is required");
-        return sendMessageCore(memberId, request.content(), List.of());
+        return new ChatResponse(session.getSessionKey(), result.content(), result.sources());
     }
 
     private ChatResult sendMessageCore(Long memberId, String question, List<ConversationContext> conversationContexts) {
@@ -106,7 +102,6 @@ public class ChatService {
             List<SourceReference> sources = embeddingStore.search(searchRequest).matches().stream()
                     .map(EmbeddingMatch::embedded)
                     .filter(Objects::nonNull)
-                    .limit(ChatPolicy.MAX_RESULTS)
                     .map(this::toSourceReference)
                     .toList();
 
@@ -147,23 +142,15 @@ public class ChatService {
                 memberId,
                 UUID.randomUUID().toString(),
                 firstQuestion,
-                ChatPolicy.MAX_TITLE_LENGTH
+                ChatPolicy.MAX_SESSION_TITLE_LENGTH
         );
         return chatSessionRepository.save(session);
     }
 
-    private void validateSessionQuestionLimit(ChatSession session) {
-        try {
-            session.assertCanAsk(ChatPolicy.MAX_SESSION_QUESTION_COUNT);
-        } catch (IllegalStateException e) {
-            throw new PkvException(ErrorCode.CHAT_SESSION_LIMIT_EXCEEDED);
-        }
-    }
-
-    private List<ConversationContext> loadConversationContexts(Long sessionId) {
-        return chatHistoryRepository.findTop5BySession_IdOrderByCreatedAtDesc(sessionId).stream()
+    private List<ConversationContext> loadConversationContexts(ChatSession session) {
+        PageRequest contextLimit = PageRequest.of(0, ChatPolicy.MAX_CONTEXT_HISTORY);
+        return chatHistoryRepository.findBySession_IdOrderByCreatedAtDesc(session.getId(), contextLimit).stream()
                 .sorted(Comparator.comparing(ChatHistory::getCreatedAt))
-                .limit(ChatPolicy.MAX_CONTEXT_HISTORY)
                 .map(chatHistory -> new ConversationContext(chatHistory.getQuestion(), chatHistory.getAnswer()))
                 .toList();
     }
@@ -174,7 +161,7 @@ public class ChatService {
                 session,
                 question,
                 result.status(),
-                result.response().content()
+                result.content()
         );
         return chatHistoryRepository.save(chatHistory);
     }
@@ -200,7 +187,7 @@ public class ChatService {
         return new SourceReference(
                 sourceId,
                 fileName == null || fileName.isBlank() ? UNKNOWN_FILE_NAME : fileName,
-                pageNumber,
+                pageNumber == null || pageNumber <= 0 ? DEFAULT_PAGE_NUMBER : pageNumber,
                 snippet
         );
     }
@@ -272,25 +259,27 @@ public class ChatService {
     }
 
     private String formatSource(int order, SourceReference source) {
-        String pageText = source.pageNumber() == null ? "-" : source.pageNumber().toString();
         return "%d. file=%s, page=%s, snippet=%s".formatted(
                 order,
                 source.fileName(),
-                pageText,
+                source.pageNumber(),
                 source.snippet()
         );
     }
 
     private ChatResult completed(String answer, List<SourceReference> sources) {
-        return new ChatResult(ChatHistoryStatus.COMPLETED, new ChatResponse(null, answer, sources));
+        return new ChatResult(ChatResponseStatus.COMPLETED, answer, sources);
     }
 
     private ChatResult irrelevant() {
-        return new ChatResult(ChatHistoryStatus.IRRELEVANT, new ChatResponse(null, IRRELEVANT_MESSAGE, List.of()));
+        return new ChatResult(ChatResponseStatus.IRRELEVANT, IRRELEVANT_MESSAGE, List.of());
     }
 
     private ChatResult failed(String message) {
-        return new ChatResult(ChatHistoryStatus.FAILED, new ChatResponse(null, message, List.of()));
+        return new ChatResult(ChatResponseStatus.FAILED, message, List.of());
+    }
+
+    private record ChatResult(ChatResponseStatus status, String content, List<SourceReference> sources) {
     }
 
     private record ConversationContext(String question, String answer) {

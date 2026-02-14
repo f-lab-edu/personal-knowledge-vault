@@ -44,7 +44,7 @@ public class ChatHistory {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
-    private ChatHistoryStatus status;
+    private ChatResponseStatus status;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -56,38 +56,20 @@ public class ChatHistory {
             Long memberId,
             ChatSession session,
             String question,
-            ChatHistoryStatus status,
+            ChatResponseStatus status,
             String answer
     ) {
         return new ChatHistory(memberId, session, question, answer, status);
     }
 
     @Builder
-    public ChatHistory(Long memberId, ChatSession session, String question, String answer, ChatHistoryStatus status) {
+    public ChatHistory(Long memberId, ChatSession session, String question, String answer, ChatResponseStatus status) {
         this.memberId = Objects.requireNonNull(memberId, "memberId is required");
         this.session = Objects.requireNonNull(session, "session is required");
         this.question = validateQuestion(question);
         this.answer = answer;
         this.status = Objects.requireNonNull(status, "status is required");
         this.createdAt = Instant.now();
-        this.updatedAt = Instant.now();
-    }
-
-    public void markCompleted(String answer) {
-        updateStatus(ChatHistoryStatus.COMPLETED, answer);
-    }
-
-    public void markIrrelevant(String answer) {
-        updateStatus(ChatHistoryStatus.IRRELEVANT, answer);
-    }
-
-    public void markFailed(String answer) {
-        updateStatus(ChatHistoryStatus.FAILED, answer);
-    }
-
-    private void updateStatus(ChatHistoryStatus status, String answer) {
-        this.status = Objects.requireNonNull(status, "status is required");
-        this.answer = answer;
         this.updatedAt = Instant.now();
     }
 

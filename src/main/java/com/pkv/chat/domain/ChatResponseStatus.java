@@ -1,6 +1,6 @@
 package com.pkv.chat.domain;
 
-public enum ChatHistoryStatus {
+public enum ChatResponseStatus {
     COMPLETED,
     IRRELEVANT,
     FAILED

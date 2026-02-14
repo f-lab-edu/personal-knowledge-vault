@@ -1,4 +1,4 @@
-package com.pkv.chat.history.dto;
+package com.pkv.chat.dto;
 
 import java.time.Instant;
 import java.util.List;

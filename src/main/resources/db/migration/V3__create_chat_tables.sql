@@ -55,8 +55,6 @@ CREATE TABLE chat_history_sources (
 
     snippet VARCHAR(200) NOT NULL,
 
-    source_deleted BOOLEAN NOT NULL DEFAULT FALSE,
-
     display_order INT NOT NULL,
 
     PRIMARY KEY (id),

@@ -1,9 +1,9 @@
-package com.pkv.chat.history.dto;
+package com.pkv.chat.dto;
 
 public record HistorySourceReference(
         Long sourceId,
         String fileName,
-        Integer pageNumber,
+        int pageNumber,
         String snippet
 ) {
 }

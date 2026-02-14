@@ -9,7 +9,7 @@ import java.util.Optional;
 
 public interface ChatHistoryRepository extends JpaRepository<ChatHistory, Long> {
 
-    List<ChatHistory> findTop5BySession_IdOrderByCreatedAtDesc(Long sessionId);
+    List<ChatHistory> findBySession_IdOrderByCreatedAtDesc(Long sessionId, Pageable pageable);
 
     List<ChatHistory> findByMemberIdAndSession_SessionKeyOrderByCreatedAtDesc(
             Long memberId,

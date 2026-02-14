@@ -6,7 +6,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ChatDomainTest {
 
@@ -17,10 +16,10 @@ class ChatDomainTest {
                 1L,
                 "session-1",
                 "  a".repeat(40),
-                ChatPolicy.MAX_TITLE_LENGTH
+                ChatPolicy.MAX_SESSION_TITLE_LENGTH
         );
 
-        assertThat(session.getTitle()).hasSize(ChatPolicy.MAX_TITLE_LENGTH);
+        assertThat(session.getTitle()).hasSize(ChatPolicy.MAX_SESSION_TITLE_LENGTH);
         assertThat(session.getTitle()).endsWith("...");
     }
 
@@ -36,25 +35,7 @@ class ChatDomainTest {
             session.incrementQuestionCount();
         }
 
-        assertThatThrownBy(() -> session.assertCanAsk(ChatPolicy.MAX_SESSION_QUESTION_COUNT))
-                .isInstanceOf(IllegalStateException.class);
-    }
-
-    @Test
-    @DisplayName("ChatHistory 상태 전이는 상태와 답변을 함께 갱신한다")
-    void markCompletedUpdatesStatusAndAnswer() {
-        ChatSession session = ChatSession.builder()
-                .memberId(1L)
-                .sessionKey("session-1")
-                .title("title")
-                .build();
-        ChatHistory chatHistory = ChatHistory.create(1L, session, " 질문 ", ChatHistoryStatus.FAILED, "실패");
-
-        chatHistory.markCompleted("완료");
-
-        assertThat(chatHistory.getQuestion()).isEqualTo("질문");
-        assertThat(chatHistory.getStatus()).isEqualTo(ChatHistoryStatus.COMPLETED);
-        assertThat(chatHistory.getAnswer()).isEqualTo("완료");
+        assertThat(session.isQuestionLimitReached(ChatPolicy.MAX_SESSION_QUESTION_COUNT)).isTrue();
     }
 
     @Test
@@ -65,14 +46,14 @@ class ChatDomainTest {
                 .sessionKey("session-1")
                 .title("title")
                 .build();
-        ChatHistory chatHistory = ChatHistory.create(1L, session, "질문", ChatHistoryStatus.COMPLETED, "답변");
+        ChatHistory chatHistory = ChatHistory.create(1L, session, " 질문 ", ChatResponseStatus.COMPLETED, "답변");
         String longSnippet = "a".repeat(ChatHistorySource.MAX_SNIPPET_LENGTH + 50);
         SourceReference sourceReference = new SourceReference(10L, "doc.pdf", 3, longSnippet);
 
         ChatHistorySource historySource = ChatHistorySource.from(chatHistory, sourceReference, 0);
 
         assertThat(historySource.getChatHistory()).isEqualTo(chatHistory);
+        assertThat(chatHistory.getQuestion()).isEqualTo("질문");
         assertThat(historySource.getSnippet()).hasSize(ChatHistorySource.MAX_SNIPPET_LENGTH);
-        assertThat(historySource.isSourceDeleted()).isFalse();
     }
 }

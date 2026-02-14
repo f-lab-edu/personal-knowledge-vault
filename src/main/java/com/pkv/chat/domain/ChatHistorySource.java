@@ -45,9 +45,6 @@ public class ChatHistorySource {
     @Column(name = "snippet", nullable = false, length = MAX_SNIPPET_LENGTH)
     private String snippet;
 
-    @Column(name = "source_deleted", nullable = false)
-    private boolean sourceDeleted;
-
     @Column(name = "display_order", nullable = false)
     private int displayOrder;
 
@@ -78,12 +75,7 @@ public class ChatHistorySource {
         this.sourceFileName = Objects.requireNonNull(sourceFileName, "sourceFileName is required");
         this.sourcePageNumber = sourcePageNumber;
         this.snippet = normalizeSnippet(snippet);
-        this.sourceDeleted = false;
         this.displayOrder = displayOrder;
-    }
-
-    public void markDeleted() {
-        this.sourceDeleted = true;
     }
 
     private String normalizeSnippet(String snippet) {
