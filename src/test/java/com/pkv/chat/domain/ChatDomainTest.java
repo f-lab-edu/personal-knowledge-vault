@@ -1,7 +1,7 @@
 package com.pkv.chat.domain;
 
 import com.pkv.chat.ChatPolicy;
-import com.pkv.chat.dto.SourceReference;
+import com.pkv.chat.dto.ChatSourceResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -48,7 +48,7 @@ class ChatDomainTest {
                 .build();
         ChatHistory chatHistory = ChatHistory.create(1L, session, " 질문 ", ChatResponseStatus.COMPLETED, "답변");
         String longSnippet = "a".repeat(ChatHistorySource.MAX_SNIPPET_LENGTH + 50);
-        SourceReference sourceReference = new SourceReference(10L, "doc.pdf", 3, longSnippet);
+        ChatSourceResponse sourceReference = new ChatSourceResponse(10L, "doc.pdf", 3, longSnippet);
 
         ChatHistorySource historySource = ChatHistorySource.from(chatHistory, sourceReference, 0);
 

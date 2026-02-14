@@ -3,8 +3,8 @@ package com.pkv.chat.service;
 import com.pkv.chat.ChatPolicy;
 import com.pkv.chat.domain.ChatHistory;
 import com.pkv.chat.domain.ChatSession;
-import com.pkv.chat.dto.ChatRequest;
-import com.pkv.chat.dto.ChatResponse;
+import com.pkv.chat.dto.ChatSendRequest;
+import com.pkv.chat.dto.ChatSendResponse;
 import com.pkv.chat.repository.ChatHistoryRepository;
 import com.pkv.chat.repository.ChatHistorySourceRepository;
 import com.pkv.chat.repository.ChatSessionRepository;
@@ -65,7 +65,7 @@ class ChatServiceTest {
     @Test
     @DisplayName("검색 가능한 파일이 없으면 FAILED 상태와 고정 메시지를 반환한다")
     void sendMessage_returnsFailedWhenNoSearchableSource() {
-        ChatRequest request = new ChatRequest("session-1", QUESTION);
+        ChatSendRequest request = new ChatSendRequest("session-1", QUESTION);
         ChatSession session = existingSession(10L, "session-1");
 
         given(chatSessionRepository.findByMemberIdAndSessionKeyForUpdate(MEMBER_ID, "session-1"))
@@ -76,7 +76,7 @@ class ChatServiceTest {
                 .willReturn(false);
         given(chatHistoryRepository.save(any(ChatHistory.class))).willAnswer(invocation -> invocation.getArgument(0));
 
-        ChatResponse response = chatService.sendMessage(MEMBER_ID, request);
+        ChatSendResponse response = chatService.sendMessage(MEMBER_ID, request);
 
         assertThat(response.sessionId()).isEqualTo("session-1");
         assertThat(response.content()).isEqualTo(ChatService.NO_SEARCHABLE_SOURCE_MESSAGE);
@@ -86,7 +86,7 @@ class ChatServiceTest {
     @Test
     @DisplayName("존재하지 않는 sessionId면 CHAT_SESSION_NOT_FOUND 예외가 발생한다")
     void sendMessage_throwsWhenSessionNotFound() {
-        ChatRequest request = new ChatRequest("missing-session", QUESTION);
+        ChatSendRequest request = new ChatSendRequest("missing-session", QUESTION);
         given(chatSessionRepository.findByMemberIdAndSessionKeyForUpdate(MEMBER_ID, "missing-session"))
                 .willReturn(Optional.empty());
 
@@ -98,7 +98,7 @@ class ChatServiceTest {
     @Test
     @DisplayName("세션 질문 수가 한도면 CHAT_SESSION_LIMIT_EXCEEDED 예외가 발생한다")
     void sendMessage_throwsWhenSessionQuestionLimitReached() {
-        ChatRequest request = new ChatRequest("session-1", QUESTION);
+        ChatSendRequest request = new ChatSendRequest("session-1", QUESTION);
         ChatSession session = ChatSession.builder()
                 .memberId(MEMBER_ID)
                 .sessionKey("session-1")
