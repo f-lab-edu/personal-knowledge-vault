@@ -55,15 +55,11 @@ public class ChatService {
     private static final String UNKNOWN_FILE_NAME = "알 수 없는 파일";
     private static final int DEFAULT_PAGE_NUMBER = 1;
 
-    private static final String SYSTEM_PROMPT = """
-            너는 사용자가 업로드한 문서를 기반으로 답변하는 어시스턴트다.
-            제공된 출처를 벗어나 추측하지 말고, 질문에 대한 답을 한국어로 간결하게 작성해라.
-            """;
-
     private final SourceRepository sourceRepository;
     private final EmbeddingModel embeddingModel;
     private final EmbeddingStore<TextSegment> embeddingStore;
     private final ChatModel chatModel;
+    private final PromptTemplateService promptTemplateService;
     private final ChatSessionRepository chatSessionRepository;
     private final ChatHistoryRepository chatHistoryRepository;
     private final ChatHistorySourceRepository chatHistorySourceRepository;
@@ -109,9 +105,11 @@ public class ChatService {
                 return irrelevant();
             }
 
-            String prompt = buildUserPrompt(question, sources, conversationContexts);
+            String sourceBlock = buildSourceBlock(sources);
+            String contextBlock = buildConversationContextBlock(conversationContexts);
+            String prompt = promptTemplateService.renderUserPrompt(question, sourceBlock, contextBlock);
             var modelResponse = chatModel.chat(List.of(
-                    SystemMessage.from(SYSTEM_PROMPT),
+                    SystemMessage.from(promptTemplateService.systemPrompt()),
                     UserMessage.from(prompt)
             ));
             String answer = modelResponse.aiMessage() != null ? modelResponse.aiMessage().text() : null;
@@ -215,39 +213,20 @@ public class ChatService {
         return text.substring(0, ChatHistorySource.MAX_SNIPPET_LENGTH);
     }
 
-    private String buildUserPrompt(String question, List<ChatSourceResponse> sources, List<ConversationContext> contexts) {
-        String sourceBlock = IntStream.range(0, sources.size())
+    private String buildSourceBlock(List<ChatSourceResponse> sources) {
+        return IntStream.range(0, sources.size())
                 .mapToObj(index -> formatSource(index + 1, sources.get(index)))
                 .collect(Collectors.joining("\n"));
+    }
 
+    private String buildConversationContextBlock(List<ConversationContext> contexts) {
         if (contexts.isEmpty()) {
-            return """
-                [질문]
-                %s
-
-                [검색된 출처]
-                %s
-
-                위 출처만 근거로 답변해줘.
-                """.formatted(question, sourceBlock);
+            return "";
         }
 
-        String contextBlock = IntStream.range(0, contexts.size())
+        return IntStream.range(0, contexts.size())
                 .mapToObj(index -> formatContext(index + 1, contexts.get(index)))
                 .collect(Collectors.joining("\n\n"));
-
-        return """
-                [이전 대화]
-                %s
-
-                [현재 질문]
-                %s
-
-                [검색된 출처]
-                %s
-
-                위 출처만 근거로 답변해줘.
-                """.formatted(contextBlock, question, sourceBlock);
     }
 
     private String formatContext(int order, ConversationContext context) {

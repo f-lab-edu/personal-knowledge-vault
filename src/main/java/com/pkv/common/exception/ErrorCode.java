@@ -25,6 +25,7 @@ public enum ErrorCode {
     CHAT_SESSION_NOT_FOUND(HttpStatus.BAD_REQUEST, "Q001", "유효하지 않은 세션입니다."),
     CHAT_SESSION_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "Q002",
             "현재 세션 질문 한도(5회)에 도달했습니다. 새 대화를 시작해주세요"),
+    CHAT_PROMPT_TEMPLATE_LOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "Q003", "프롬프트 템플릿 로딩에 실패했습니다."),
 
     // History
     HISTORY_NOT_FOUND(HttpStatus.NOT_FOUND, "H001", "히스토리를 찾을 수 없습니다."),
