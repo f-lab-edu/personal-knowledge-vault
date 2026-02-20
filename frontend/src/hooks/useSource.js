@@ -7,10 +7,13 @@ import {
     confirmUpload,
     getContentType,
 } from '../api/source';
+import { SOURCE_STATUS } from '../utils/constants';
 
 const SOURCES_QUERY_KEY = ['sources'];
 
-const POLLING_STATUSES = ['UPLOADED', 'PROCESSING'];
+const POLLING_STATUSES = Object.entries(SOURCE_STATUS)
+    .filter(([, v]) => v.polling)
+    .map(([k]) => k);
 
 export const useSources = () => {
     return useQuery({

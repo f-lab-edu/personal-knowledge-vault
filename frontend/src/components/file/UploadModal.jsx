@@ -1,14 +1,22 @@
 import { useState, useRef } from 'react';
-import * as Dialog from '@radix-ui/react-dialog';
-import * as Progress from '@radix-ui/react-progress';
-import { clsx } from 'clsx';
-import styles from './UploadModal.module.css';
-import Button from '../ui/Button';
-import { useUploadSource } from '../../hooks/useSource';
-import { formatFileSize } from '../../utils/format';
-import { validateFile, ACCEPT_EXTENSIONS } from '../../utils/validation';
-import { getErrorMessage } from '../../utils/error';
-import { toast } from '../../stores/toastStore';
+import { cn } from '@/lib/utils';
+import { FileText, UploadCloud } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+    DialogClose,
+} from '@/components/ui/dialog';
+import { useUploadSource } from '@/hooks/useSource';
+import { formatFileSize } from '@/utils/format';
+import { validateFile, ACCEPT_EXTENSIONS } from '@/utils/validation';
+import { getErrorMessage } from '@/utils/error';
+import { toast } from 'sonner';
 
 const UploadModal = ({ open, onOpenChange }) => {
     const [selectedFile, setSelectedFile] = useState(null);
@@ -71,101 +79,94 @@ const UploadModal = ({ open, onOpenChange }) => {
         handleFileSelect(e.dataTransfer.files?.[0]);
     };
 
-    const handleUpload = async () => {
+    const handleUpload = () => {
         if (!selectedFile || uploading) return;
 
-        try {
-            const normalizedName = selectedFile.name.normalize('NFC');
-            const fileToUpload = normalizedName !== selectedFile.name
-                ? new File([selectedFile], normalizedName, { type: selectedFile.type })
-                : selectedFile;
+        const normalizedName = selectedFile.name.normalize('NFC');
+        const fileToUpload = normalizedName !== selectedFile.name
+            ? new File([selectedFile], normalizedName, { type: selectedFile.type })
+            : selectedFile;
 
-            await uploadMutation.mutateAsync({
-                file: fileToUpload,
-                onProgress: setProgress,
-            });
-            resetState();
-            onOpenChange(false);
-        } catch (error) {
-            toast.error(getErrorMessage(error, '업로드에 실패했습니다.'));
-        }
+        uploadMutation.mutate(
+            { file: fileToUpload, onProgress: setProgress },
+            {
+                onSuccess: () => {
+                    resetState();
+                    onOpenChange(false);
+                },
+                onError: (error) => {
+                    toast.error(getErrorMessage(error, '업로드에 실패했습니다.'));
+                },
+            },
+        );
     };
 
     return (
-        <Dialog.Root open={open} onOpenChange={handleOpenChange}>
-            <Dialog.Portal>
-                <Dialog.Overlay className={styles.overlay} />
-                <Dialog.Content className={styles.content}>
-                    <Dialog.Title className={styles.title}>
-                        문서 업로드
-                    </Dialog.Title>
-                    <Dialog.Description className={styles.description}>
+        <Dialog open={open} onOpenChange={handleOpenChange}>
+            <DialogContent className="max-w-[450px]" showCloseButton={false}>
+                <DialogHeader>
+                    <DialogTitle>문서 업로드</DialogTitle>
+                    <DialogDescription>
                         PDF, TXT, 또는 MD 파일을 업로드하세요. 파일당 최대 30MB.
-                    </Dialog.Description>
+                    </DialogDescription>
+                </DialogHeader>
 
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept={ACCEPT_EXTENSIONS}
-                        onChange={handleInputChange}
-                        style={{ display: 'none' }}
-                    />
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept={ACCEPT_EXTENSIONS}
+                    onChange={handleInputChange}
+                    className="hidden"
+                />
 
-                    <div
-                        className={clsx(styles.dropzone, isDragging && styles.dropzoneDragging)}
-                        onClick={handleDropzoneClick}
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        onDrop={handleDrop}
-                    >
-                        {selectedFile ? (
-                            <div className={styles.dropzoneContent}>
-                                <svg className={styles.dropzoneIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                <span className={styles.dropzoneText}>{selectedFile.name}</span>
-                                <p className={styles.dropzoneHint}>{formatFileSize(selectedFile.size)}</p>
-                            </div>
-                        ) : (
-                            <div className={styles.dropzoneContent}>
-                                <svg className={styles.dropzoneIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                </svg>
-                                <span className={styles.dropzoneText}>클릭하여 선택하거나 파일을 여기로 드래그하세요</span>
-                                <p className={styles.dropzoneHint}>지원 형식: .pdf, .txt, .md</p>
-                            </div>
-                        )}
-                    </div>
-
-                    {uploading && (
-                        <div className={styles.progressWrapper}>
-                            <div className={styles.progressLabel}>
-                                <span>업로드 중...</span>
-                                <span>{progress}%</span>
-                            </div>
-                            <Progress.Root className={styles.progressRoot} value={progress}>
-                                <Progress.Indicator
-                                    className={styles.progressIndicator}
-                                    style={{ transform: `translateX(-${100 - progress}%)` }}
-                                />
-                            </Progress.Root>
+                <div
+                    className={cn(
+                        "border-2 border-dashed border-[var(--color-border-light)] rounded-md p-8 text-center mb-2 cursor-pointer transition-all hover:bg-muted hover:border-border",
+                        isDragging && "bg-muted border-primary"
+                    )}
+                    onClick={handleDropzoneClick}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                >
+                    {selectedFile ? (
+                        <div className="text-[var(--color-tertiary)] mb-2">
+                            <FileText className="size-10 mx-auto mb-2 opacity-50" />
+                            <span className="text-sm font-medium block">{selectedFile.name}</span>
+                            <p className="text-xs text-[var(--color-tertiary)]">{formatFileSize(selectedFile.size)}</p>
+                        </div>
+                    ) : (
+                        <div className="text-[var(--color-tertiary)] mb-2">
+                            <UploadCloud className="size-10 mx-auto mb-2 opacity-50" />
+                            <span className="text-sm font-medium block">클릭하여 선택하거나 파일을 여기로 드래그하세요</span>
+                            <p className="text-xs text-[var(--color-tertiary)]">지원 형식: .pdf, .txt, .md</p>
                         </div>
                     )}
+                </div>
 
-                    <div className={styles.actions}>
-                        <Dialog.Close asChild>
-                            <Button variant="ghost" disabled={uploading}>취소</Button>
-                        </Dialog.Close>
-                        <Button
-                            onClick={handleUpload}
-                            disabled={!selectedFile || uploading}
-                        >
-                            {uploading ? '처리 중...' : '업로드'}
-                        </Button>
+                {uploading && (
+                    <div className="mb-2">
+                        <div className="flex justify-between text-xs mb-1 text-muted-foreground">
+                            <span>업로드 중...</span>
+                            <span>{progress}%</span>
+                        </div>
+                        <Progress value={progress} />
                     </div>
-                </Dialog.Content>
-            </Dialog.Portal>
-        </Dialog.Root>
+                )}
+
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button variant="ghost" disabled={uploading}>취소</Button>
+                    </DialogClose>
+                    <Button
+                        onClick={handleUpload}
+                        disabled={!selectedFile || uploading}
+                    >
+                        {uploading ? '처리 중...' : '업로드'}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 };
 
