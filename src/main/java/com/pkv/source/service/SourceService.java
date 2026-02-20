@@ -2,12 +2,14 @@ package com.pkv.source.service;
 
 import com.pkv.common.exception.ErrorCode;
 import com.pkv.common.exception.PkvException;
+import com.pkv.common.service.EmbeddingRepository;
+import com.pkv.chat.repository.ChatHistorySourceRepository;
+import com.pkv.member.repository.MemberRepository;
 import com.pkv.source.domain.Source;
 import com.pkv.source.domain.SourceStatus;
 import com.pkv.source.dto.PresignRequest;
 import com.pkv.source.dto.PresignResponse;
 import com.pkv.source.dto.SourceResponse;
-import com.pkv.common.service.EmbeddingRepository;
 import com.pkv.source.repository.SourceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
@@ -28,9 +30,13 @@ public class SourceService {
     private final S3FileStorage s3FileStorage;
     private final EmbeddingJobProducer embeddingJobProducer;
     private final EmbeddingRepository embeddingRepository;
+    private final ChatHistorySourceRepository chatHistorySourceRepository;
+    private final MemberRepository memberRepository;
 
     @Transactional
     public PresignResponse requestPresignedUrl(Long memberId, PresignRequest request) {
+        validateMemberExists(memberId);
+
         String fileName = request.fileName();
         long fileSize = request.fileSize();
 
@@ -84,6 +90,8 @@ public class SourceService {
 
     @Transactional
     public SourceResponse confirmUpload(Long memberId, Long sourceId) {
+        validateMemberExists(memberId);
+
         Source source = sourceRepository.findByIdAndMemberId(sourceId, memberId)
                 .orElseThrow(() -> new PkvException(ErrorCode.SOURCE_NOT_FOUND));
 
@@ -103,6 +111,8 @@ public class SourceService {
 
     @Transactional
     public void deleteSource(Long memberId, Long sourceId) {
+        validateMemberExists(memberId);
+
         Source source = sourceRepository.findByIdAndMemberId(sourceId, memberId)
                 .orElseThrow(() -> new PkvException(ErrorCode.SOURCE_NOT_FOUND));
 
@@ -110,9 +120,16 @@ public class SourceService {
             throw new PkvException(ErrorCode.SOURCE_DELETE_NOT_ALLOWED);
         }
 
+        chatHistorySourceRepository.clearSourceIdBySourceId(sourceId);
         embeddingRepository.deleteBySourceId(sourceId);
 
         s3FileStorage.deleteObject(source.getStoragePath());
         sourceRepository.delete(source);
+    }
+
+    private void validateMemberExists(Long memberId) {
+        if (!memberRepository.existsByIdAndDeletedAtIsNull(memberId)) {
+            throw new PkvException(ErrorCode.MEMBER_NOT_FOUND);
+        }
     }
 }
