@@ -44,13 +44,26 @@ public class ChatHistorySource {
     @Column(name = "source_page_number")
     private Integer sourcePageNumber;
 
+    // 실제 청크 추적용 참조값(`<sourceId>:<chunkIndex>`). source_id가 NULL이면 원본 소스는 삭제된 상태이며, 이 값은 이력 추적용으로만 유지된다.
+    @Column(name = "source_chunk_ref", length = 64)
+    private String sourceChunkRef;
+
     @Column(name = "snippet", nullable = false, length = MAX_SNIPPET_LENGTH)
     private String snippet;
 
     @Column(name = "display_order", nullable = false)
     private int displayOrder;
 
-    public static ChatHistorySource from(ChatHistory chatHistory, ChatSourceResponse sourceResponse, int displayOrder) {
+    public static ChatHistorySource create(ChatHistory chatHistory, ChatSourceResponse sourceResponse, int displayOrder) {
+        return create(chatHistory, sourceResponse, null, displayOrder);
+    }
+
+    public static ChatHistorySource create(
+            ChatHistory chatHistory,
+            ChatSourceResponse sourceResponse,
+            String sourceChunkRef,
+            int displayOrder
+    ) {
         Objects.requireNonNull(sourceResponse, "sourceResponse is required");
 
         return new ChatHistorySource(
@@ -58,6 +71,7 @@ public class ChatHistorySource {
                 sourceResponse.sourceId(),
                 sourceResponse.fileName(),
                 sourceResponse.pageNumber(),
+                sourceChunkRef,
                 sourceResponse.snippet(),
                 displayOrder
         );
@@ -69,6 +83,7 @@ public class ChatHistorySource {
             Long sourceId,
             String sourceFileName,
             Integer sourcePageNumber,
+            String sourceChunkRef,
             String snippet,
             int displayOrder
     ) {
@@ -76,6 +91,7 @@ public class ChatHistorySource {
         this.sourceId = sourceId;
         this.sourceFileName = Objects.requireNonNull(sourceFileName, "sourceFileName is required");
         this.sourcePageNumber = sourcePageNumber;
+        this.sourceChunkRef = sourceChunkRef;
         this.snippet = normalizeSnippet(snippet);
         this.displayOrder = displayOrder;
     }
