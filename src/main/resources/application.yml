@@ -2,21 +2,10 @@ spring:
   application:
     name: pkv
 
-  security:
-    oauth2:
-      client:
-        registration:
-          google:
-            client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_CLIENT_SECRET}
-            scope:
-              - email
-              - profile
-
   datasource:
     url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:pkv}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
     username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:}
+    password: ${DB_PASSWORD:root}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
@@ -25,8 +14,8 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
-        format_sql: true
-    show-sql: true
+        format_sql: false
+    show-sql: false
     open-in-view: false
 
   flyway:
@@ -34,9 +23,20 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
-logging:
-  level:
-    com.pkv: DEBUG
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9094}
+
+langchain4j:
+  open-ai:
+    embedding-model:
+      api-key: ${OPENAI_API_KEY:}
+      model-name: text-embedding-3-small
+
+
+qdrant:
+  host: ${QDRANT_HOST:localhost}
+  port: ${QDRANT_PORT:6334}
+  collection-name: ${QDRANT_COLLECTION:pkv_text_segments}
 
 management:
   endpoints:
@@ -51,14 +51,6 @@ management:
   metrics:
     tags:
       application: ${spring.application.name}
-
-jwt:
-  secret: ${JWT_SECRET:pkv-dev-only-jwt-secret-key-do-not-use-in-production-a1b2c3d4e5f6}
-  access-token-expiry: 1800000
-  refresh-token-expiry: 604800000
-
-app:
-  frontend-url: ${FRONTEND_URL:http://localhost:5173}
 
 cloud:
   aws:

@@ -1,4 +1,9 @@
 spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+      - dev.langchain4j.openai.spring.AutoConfig
+
   security:
     oauth2:
       client:
@@ -25,11 +30,6 @@ spring:
 
 jwt:
   secret: test-jwt-secret-key-for-testing-purposes-only-32-chars-minimum
-  access-token-expiry: 1800000
-  refresh-token-expiry: 604800000
-
-app:
-  frontend-url: http://localhost:5173
 
 cloud:
   aws:
@@ -39,3 +39,6 @@ cloud:
     credentials:
       access-key: mock-access-key
       secret-key: mock-secret-key
+
+qdrant:
+  collection-name: test_vectors
