@@ -2,8 +2,10 @@ package com.pkv.chat.domain;
 
 import com.pkv.chat.dto.ChatSourceResponse;
 import jakarta.persistence.Column;
+import jakarta.persistence.ConstraintMode;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -30,7 +32,7 @@ public class ChatHistorySource {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "history_id", nullable = false)
+    @JoinColumn(name = "history_id", nullable = false, foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private ChatHistory chatHistory;
 
     @Column(name = "source_id")

@@ -73,8 +73,8 @@ class AuthServiceTest {
 
             // when & then
             assertThatThrownBy(() -> authService.getCurrentMember(memberId))
-                    .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("Member not found");
+                    .isInstanceOf(PkvException.class)
+                    .satisfies(e -> assertThat(((PkvException) e).getErrorCode()).isEqualTo(ErrorCode.MEMBER_NOT_FOUND));
         }
     }
 

@@ -23,7 +23,7 @@ public class AuthService {
 
     public MemberInfoResponse getCurrentMember(Long memberId) {
         Member member = memberRepository.findByIdAndDeletedAtIsNull(memberId)
-                .orElseThrow(() -> new IllegalStateException("Member not found: " + memberId));
+                .orElseThrow(() -> new PkvException(ErrorCode.MEMBER_NOT_FOUND));
         return MemberInfoResponse.from(member);
     }
 
