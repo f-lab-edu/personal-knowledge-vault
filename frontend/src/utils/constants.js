@@ -1,6 +1,7 @@
 export const STATUS_LABEL = {
     COMPLETED: '완료',
     IRRELEVANT: '관련없음',
+    CANCELLED: '취소됨',
     FAILED: '실패',
 };
 
