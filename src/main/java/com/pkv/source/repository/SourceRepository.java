@@ -20,8 +20,6 @@ public interface SourceRepository extends JpaRepository<Source, Long> {
 
     boolean existsByMemberIdAndOriginalFileNameAndStatusNot(Long memberId, String originalFileName, SourceStatus status);
 
-    boolean existsByMemberIdAndStatus(Long memberId, SourceStatus status);
-
     void deleteByMemberIdAndOriginalFileNameAndStatus(Long memberId, String originalFileName, SourceStatus status);
 
     Optional<Source> findByIdAndMemberId(Long id, Long memberId);

@@ -28,11 +28,8 @@ spring:
 
 langchain4j:
   open-ai:
-    chat-model:
-      api-key: ${CHAT_MODEL_API_KEY:}
-      model-name: gpt-4o-mini
     embedding-model:
-      api-key: ${EMBEDDING_MODEL_API_KEY:}
+      api-key: ${OPENAI_API_KEY:}
       model-name: text-embedding-3-small
 
 
