@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -59,7 +58,7 @@ public class SourceService {
                 .build();
         sourceRepository.save(source);
 
-        String key = "sources/" + System.currentTimeMillis() + "_" + UUID.randomUUID() + "." + extension;
+        String key = "sources/" + memberId + "/" + source.getId() + "." + extension;
         source.assignStoragePath(key);
 
         String contentType = sourceValidator.getContentType(extension);

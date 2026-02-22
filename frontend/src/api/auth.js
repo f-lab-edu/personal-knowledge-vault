@@ -1,4 +1,6 @@
-import { buildApiUrl, request, unwrapData } from './http';
+import { buildApiUrl, request } from './http';
+
+const unwrapData = (payload) => payload?.data ?? null;
 
 let refreshUnavailable = false;
 let refreshPromise = null;
@@ -20,7 +22,7 @@ export const startOAuthLogin = () => {
     window.location.assign(buildApiUrl('/oauth2/authorization/google'));
 };
 
-const refreshAccessToken = async () => {
+export const refreshAccessToken = async () => {
     if (refreshUnavailable) {
         const error = new Error('Refresh token unavailable');
         error.status = 401;

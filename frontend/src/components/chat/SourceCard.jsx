@@ -1,24 +1,27 @@
-import { FileText } from 'lucide-react';
+/**
+ * 답변 출처 정보 (파일명, 페이지, 발췌문)
+ */
+import React from 'react';
+import styles from './SourceCard.module.css';
 
 const SourceCard = ({ source, onClick }) => {
     return (
-        <div
-            onClick={onClick}
-            className="group relative border border-[var(--color-border-light)] rounded-md p-3 bg-white cursor-pointer w-[220px] shrink-0 transition-all hover:border-black/20 hover:shadow-sm"
-        >
-            <div className="flex items-center gap-2 mb-2">
-                <FileText className="size-3.5 text-[var(--color-tertiary)] transition-colors group-hover:text-foreground" />
-                <span className="text-xs font-bold text-muted-foreground truncate transition-colors group-hover:text-foreground" title={source.fileName}>
+        <div onClick={onClick} className={styles.card}>
+            <div className={styles.header}>
+                <svg className={styles.icon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span className={styles.fileName} title={source.fileName}>
                     {source.fileName}
                 </span>
             </div>
 
-            <div className="text-[0.625rem] text-muted-foreground leading-relaxed opacity-90 mb-3 line-clamp-3">
-                &ldquo;{source.snippet}&rdquo;
+            <div className={styles.snippet}>
+                "{source.snippet}"
             </div>
 
-            <div className="flex items-center">
-                <span className="text-[0.5625rem] font-semibold uppercase tracking-widest text-[var(--color-tertiary)] border border-[var(--color-border-light)] px-2 py-1 rounded-sm">
+            <div className={styles.footer}>
+                <span className={styles.pageBadge}>
                     P. {source.pageNumber}
                 </span>
             </div>
