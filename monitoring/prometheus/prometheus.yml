@@ -10,9 +10,4 @@ scrape_configs:
   - job_name: 'pkv-app'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: ['pkv-app:8080']
-
-  - job_name: 'pkv-worker'
-    metrics_path: '/actuator/prometheus'
-    static_configs:
-      - targets: ['pkv-worker:8081']
+      - targets: ['host.docker.internal:8080']

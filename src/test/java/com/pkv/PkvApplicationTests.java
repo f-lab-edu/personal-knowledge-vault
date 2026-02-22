@@ -1,9 +1,12 @@
 package com.pkv;
 
-import com.pkv.support.IntegrationTestSupport;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
-class PkvApplicationTests extends IntegrationTestSupport {
+@SpringBootTest
+@ActiveProfiles("test")
+class PkvApplicationTests {
 
     @Test
     void contextLoads() {

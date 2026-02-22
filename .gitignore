@@ -31,8 +31,6 @@ out/
 
 ### Environment Variables ###
 .env
-.env.local
-frontend/.env.local
 
 .claude
 
@@ -44,5 +42,3 @@ frontend/.env.local
 
 frontend/tempdocs/
 tempdocs/
-
-dev/

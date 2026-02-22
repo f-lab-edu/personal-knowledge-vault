@@ -7,10 +7,8 @@ import com.pkv.source.domain.SourceStatus;
 import com.pkv.source.dto.PresignRequest;
 import com.pkv.source.dto.PresignResponse;
 import com.pkv.source.dto.SourceResponse;
-import com.pkv.common.service.EmbeddingRepository;
 import com.pkv.source.repository.SourceRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,7 +16,6 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
-@Profile("api")
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class SourceService {
@@ -26,8 +23,6 @@ public class SourceService {
     private final SourceRepository sourceRepository;
     private final SourceValidator sourceValidator;
     private final S3FileStorage s3FileStorage;
-    private final EmbeddingJobProducer embeddingJobProducer;
-    private final EmbeddingRepository embeddingRepository;
 
     @Transactional
     public PresignResponse requestPresignedUrl(Long memberId, PresignRequest request) {
@@ -96,7 +91,6 @@ public class SourceService {
         }
 
         source.confirm();
-        embeddingJobProducer.send(source);
 
         return SourceResponse.from(source);
     }
@@ -109,8 +103,6 @@ public class SourceService {
         if (!source.isDeletable()) {
             throw new PkvException(ErrorCode.SOURCE_DELETE_NOT_ALLOWED);
         }
-
-        embeddingRepository.deleteBySourceId(sourceId);
 
         s3FileStorage.deleteObject(source.getStoragePath());
         sourceRepository.delete(source);

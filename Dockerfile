@@ -28,10 +28,8 @@ RUN chown -R appuser:appgroup /app
 
 USER appuser
 
-ENV SERVER_PORT=8080
-
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:${SERVER_PORT}/actuator/health || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
 
 EXPOSE 8080
 
