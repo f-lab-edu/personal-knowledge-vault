@@ -5,11 +5,17 @@ import { Button } from '@/components/ui/button';
 const ChatInput = ({ onSend, disabled }) => {
     const [text, setText] = useState('');
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!text.trim() || disabled) return;
-        onSend(text);
-        setText('');
+        if (!text.trim() || disabled) {
+            return;
+        }
+
+        const submittedText = text.trim();
+        const isSent = await onSend(submittedText);
+        if (isSent) {
+            setText('');
+        }
     };
 
     const handleKeyDown = (e) => {

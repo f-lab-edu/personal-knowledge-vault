@@ -3,9 +3,9 @@ import SessionGroup from './SessionGroup';
 import { useSessionList } from '@/hooks/useHistory';
 import HistoryDetailModal from './HistoryDetailModal';
 
-const HistoryList = () => {
+const HistoryList = ({ activeSessionId, onSelectSession }) => {
     const { data: sessions, isLoading } = useSessionList();
-    const [selectedHistoryId, setSelectedHistoryId] = useState(null);
+    const [selectedChatHistoryId, setSelectedChatHistoryId] = useState(null);
 
     if (isLoading) {
         return (
@@ -29,12 +29,14 @@ const HistoryList = () => {
                 <SessionGroup
                     key={session.sessionId}
                     session={session}
-                    onSelectHistory={setSelectedHistoryId}
+                    isActive={activeSessionId === session.sessionId}
+                    onSelectSession={onSelectSession}
+                    onSelectHistory={setSelectedChatHistoryId}
                 />
             ))}
             <HistoryDetailModal
-                historyId={selectedHistoryId}
-                onClose={() => setSelectedHistoryId(null)}
+                chatHistoryId={selectedChatHistoryId}
+                onClose={() => setSelectedChatHistoryId(null)}
             />
         </div>
     );
