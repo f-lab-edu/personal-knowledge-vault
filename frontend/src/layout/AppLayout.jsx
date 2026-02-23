@@ -3,9 +3,20 @@ import { ChevronLeft } from 'lucide-react';
 import Sidebar from './Sidebar';
 import ChatArea from './ChatArea';
 import HistoryPanel from './HistoryPanel';
+import { useChatSession } from '@/hooks/useChatSession';
 
 const AppLayout = () => {
     const [isHistoryOpen, setIsHistoryOpen] = useState(true);
+    const {
+        sessionId,
+        messages,
+        loading,
+        sessionEnded,
+        isRestoring,
+        startNewSession,
+        selectSession,
+        handleSend,
+    } = useChatSession();
 
     return (
         <div className="flex h-screen w-screen overflow-hidden bg-background">
@@ -13,13 +24,24 @@ const AppLayout = () => {
                 <Sidebar />
             </aside>
             <main className="flex-1 h-full flex flex-col relative">
-                <ChatArea />
+                <ChatArea
+                    sessionId={sessionId}
+                    messages={messages}
+                    loading={loading}
+                    sessionEnded={sessionEnded}
+                    isRestoring={isRestoring}
+                    onSend={handleSend}
+                    onStartNewSession={startNewSession}
+                />
             </main>
             <aside className={isHistoryOpen
-                ? "w-[var(--rnb-width)] h-full border-l bg-muted"
-                : "hidden"
-            }>
-                <HistoryPanel />
+                ? 'w-[var(--rnb-width)] h-full border-l bg-muted'
+                : 'hidden'}
+            >
+                <HistoryPanel
+                    activeSessionId={sessionId}
+                    onSelectSession={selectSession}
+                />
             </aside>
             {!isHistoryOpen && (
                 <button

@@ -1,9 +1,9 @@
 import { request, unwrapData } from './http';
 
-export const sendMessage = async (sessionId, content, conversationHistory) => {
+export const sendMessage = async (sessionId, content) => {
     const payload = await request('/api/chat/messages', {
         method: 'POST',
-        body: { sessionId, content, conversationHistory },
+        body: { sessionId, content },
     });
     return unwrapData(payload);
 };
