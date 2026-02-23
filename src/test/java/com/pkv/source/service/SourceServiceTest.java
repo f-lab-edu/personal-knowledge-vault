@@ -7,6 +7,7 @@ import com.pkv.source.domain.SourceStatus;
 import com.pkv.source.dto.PresignResponse;
 import com.pkv.source.dto.PresignRequest;
 import com.pkv.source.dto.SourceResponse;
+import com.pkv.common.service.EmbeddingRepository;
 import com.pkv.source.repository.SourceRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -26,6 +27,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 class SourceServiceTest {
@@ -38,6 +40,12 @@ class SourceServiceTest {
 
     @Mock
     private S3FileStorage s3FileStorage;
+
+    @Mock
+    private EmbeddingJobProducer embeddingJobProducer;
+
+    @Mock
+    private EmbeddingRepository embeddingRepository;
 
     @InjectMocks
     private SourceService sourceService;
@@ -164,6 +172,7 @@ class SourceServiceTest {
 
             // then
             assertThat(response.status()).isEqualTo(SourceStatus.UPLOADED);
+            then(embeddingJobProducer).should().send(source); // confirmUpload 시 Kafka 메시지 발행이 호출되는지 검증
         }
 
         @Test
@@ -217,7 +226,7 @@ class SourceServiceTest {
     class DeleteSource {
 
         @Test
-        @DisplayName("COMPLETED 상태의 소스를 삭제하면 S3 파일과 DB 레코드가 모두 삭제된다")
+        @DisplayName("COMPLETED 상태의 소스를 삭제하면 벡터, S3 파일, DB 레코드가 모두 삭제된다")
         void deleteCompleted() {
             // given
             Source source = createSource(1L, SourceStatus.COMPLETED);
@@ -229,12 +238,13 @@ class SourceServiceTest {
             sourceService.deleteSource(MEMBER_ID, 1L);
 
             // then
+            then(embeddingRepository).should().deleteBySourceId(1L);
             then(s3FileStorage).should().deleteObject(source.getStoragePath());
             then(sourceRepository).should().delete(source);
         }
 
         @Test
-        @DisplayName("FAILED 상태의 소스를 삭제하면 S3 파일과 DB 레코드가 모두 삭제된다")
+        @DisplayName("FAILED 상태의 소스를 삭제하면 벡터, S3 파일, DB 레코드가 모두 삭제된다")
         void deleteFailed() {
             // given
             Source source = createSource(1L, SourceStatus.FAILED);
@@ -246,6 +256,7 @@ class SourceServiceTest {
             sourceService.deleteSource(MEMBER_ID, 1L);
 
             // then
+            then(embeddingRepository).should().deleteBySourceId(1L);
             then(s3FileStorage).should().deleteObject(source.getStoragePath());
             then(sourceRepository).should().delete(source);
         }
@@ -263,6 +274,8 @@ class SourceServiceTest {
             assertThatThrownBy(() -> sourceService.deleteSource(MEMBER_ID, 1L))
                     .isInstanceOf(PkvException.class)
                     .satisfies(e -> assertErrorCode(e, ErrorCode.SOURCE_DELETE_NOT_ALLOWED));
+
+            then(embeddingRepository).should(never()).deleteBySourceId(anyLong());
         }
 
         @Test
@@ -278,6 +291,8 @@ class SourceServiceTest {
             assertThatThrownBy(() -> sourceService.deleteSource(MEMBER_ID, 1L))
                     .isInstanceOf(PkvException.class)
                     .satisfies(e -> assertErrorCode(e, ErrorCode.SOURCE_DELETE_NOT_ALLOWED));
+
+            then(embeddingRepository).should(never()).deleteBySourceId(anyLong());
         }
 
         @Test
@@ -291,6 +306,8 @@ class SourceServiceTest {
             assertThatThrownBy(() -> sourceService.deleteSource(MEMBER_ID, 999L))
                     .isInstanceOf(PkvException.class)
                     .satisfies(e -> assertErrorCode(e, ErrorCode.SOURCE_NOT_FOUND));
+
+            then(embeddingRepository).should(never()).deleteBySourceId(anyLong());
         }
     }
 
