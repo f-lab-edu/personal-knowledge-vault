@@ -1,28 +1,24 @@
-import { cn } from '@/lib/utils';
-import { FileText, Trash2 } from 'lucide-react';
-import { useSources, useDeleteSource } from '@/hooks/useSource';
-import { formatFileSize } from '@/utils/format';
-import { getErrorMessage } from '@/utils/error';
-import { toast } from 'sonner';
-import { confirm } from '@/stores/confirmStore';
-import { SOURCE_STATUS } from '@/utils/constants';
+import { clsx } from 'clsx';
+import styles from './FileList.module.css';
+import { useSources, useDeleteSource } from '../../hooks/useSource';
+import { formatFileSize } from '../../utils/format';
+import { getErrorMessage } from '../../utils/error';
+import { toast } from '../../stores/toastStore';
+import { confirm } from '../../stores/confirmStore';
 
-const STATUS_STYLES = {
-    UPLOADED: 'text-muted-foreground bg-black/5',
-    PROCESSING: 'text-[var(--color-info)] bg-[rgba(25,118,210,0.1)]',
-    COMPLETED: 'text-[var(--color-success)] bg-[rgba(56,142,60,0.1)]',
-    FAILED: 'text-[var(--color-error)] bg-[rgba(211,47,47,0.1)]',
+const STATUS_CONFIG = {
+    UPLOADED: { className: styles.statusPending, label: '분석 대기' },
+    PROCESSING: { className: styles.statusEmbedding, label: '처리 중' },
+    COMPLETED: { className: styles.statusCompleted, label: '준비됨' },
+    FAILED: { className: styles.statusFailed, label: '실패' },
 };
 
 const StatusBadge = ({ status }) => {
-    const config = SOURCE_STATUS[status];
+    const config = STATUS_CONFIG[status];
     if (!config) return null;
 
     return (
-        <span className={cn(
-            "text-[0.5625rem] px-2 py-1 rounded-sm font-bold uppercase tracking-widest leading-tight whitespace-nowrap shrink-0",
-            STATUS_STYLES[status]
-        )}>
+        <span className={clsx(styles.badge, config.className)}>
             {config.label}
         </span>
     );
@@ -49,16 +45,16 @@ const FileList = () => {
 
     if (isLoading) {
         return (
-            <div className="flex flex-col gap-1">
-                <div className="px-3 py-6 text-center text-sm text-[var(--color-tertiary)]">불러오는 중...</div>
+            <div className={styles.container}>
+                <div className={styles.emptyMessage}>불러오는 중...</div>
             </div>
         );
     }
 
     if (sources.length === 0) {
         return (
-            <div className="flex flex-col gap-1">
-                <div className="px-3 py-6 text-center text-sm text-[var(--color-tertiary)]">
+            <div className={styles.container}>
+                <div className={styles.emptyMessage}>
                     업로드된 문서가 없습니다.
                 </div>
             </div>
@@ -68,35 +64,41 @@ const FileList = () => {
     const canDelete = (status) => status === 'COMPLETED' || status === 'FAILED';
 
     return (
-        <div className="flex flex-col gap-1">
-            <div className="flex items-center justify-between px-3 py-2 mb-1 border-b border-[var(--color-border-light)] text-[0.625rem] font-bold text-[var(--color-tertiary)] uppercase tracking-widest">
+        <div className={styles.container}>
+            <div className={styles.header}>
                 <span>문서</span>
                 <span>상태</span>
             </div>
 
             {sources.map((source) => (
-                <div key={source.id} className="group flex items-center justify-between px-3 py-2 rounded-sm cursor-pointer transition-all border border-transparent hover:bg-background hover:border-[var(--color-border-light)] hover:shadow-sm">
-                    <div className="flex items-center gap-3 overflow-hidden">
-                        <FileText className={cn(
-                            "size-3.5 shrink-0 text-[var(--color-tertiary)] transition-colors group-hover:text-muted-foreground",
-                            source.extension === 'pdf' && "text-[var(--color-error)] opacity-80 group-hover:text-[var(--color-error)] group-hover:opacity-100"
-                        )} />
-                        <div className="flex flex-col min-w-0">
-                            <span className="text-xs font-medium text-foreground truncate tracking-tight">{source.fileName}</span>
-                            <span className="text-[0.625rem] text-[var(--color-tertiary)] mt-1">{formatFileSize(source.fileSize)}</span>
+                <div key={source.id} className={styles.fileItem}>
+                    <div className={styles.fileInfo}>
+                        <svg
+                            className={clsx(styles.icon, source.extension === 'pdf' && styles.iconPdf)}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <div className={styles.details}>
+                            <span className={styles.fileName}>{source.fileName}</span>
+                            <span className={styles.fileSize}>{formatFileSize(source.fileSize)}</span>
                         </div>
                     </div>
 
-                    <div className="flex items-center shrink-0 ml-2">
+                    <div className={styles.statusContainer}>
                         <StatusBadge status={source.status} />
                         {canDelete(source.status) && (
                             <button
-                                className="flex items-center justify-center p-1 ml-2 rounded-sm text-[var(--color-tertiary)] cursor-pointer opacity-0 transition-all group-hover:opacity-100 hover:text-[var(--color-error)] hover:bg-[rgba(211,47,47,0.08)] disabled:opacity-40 disabled:cursor-not-allowed"
+                                className={styles.deleteButton}
                                 onClick={() => handleDelete(source)}
                                 disabled={deleteMutation.isPending}
                                 title="삭제"
                             >
-                                <Trash2 className="size-3.5" />
+                                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
                             </button>
                         )}
                     </div>

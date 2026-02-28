@@ -7,13 +7,10 @@ import {
     confirmUpload,
     getContentType,
 } from '../api/source';
-import { SOURCE_STATUS } from '../utils/constants';
 
 const SOURCES_QUERY_KEY = ['sources'];
 
-const POLLING_STATUSES = Object.entries(SOURCE_STATUS)
-    .filter(([, v]) => v.polling)
-    .map(([k]) => k);
+const POLLING_STATUSES = ['UPLOADED', 'PROCESSING'];
 
 export const useSources = () => {
     return useQuery({
@@ -23,7 +20,7 @@ export const useSources = () => {
             const hasPending = query.state.data?.some((s) =>
                 POLLING_STATUSES.includes(s.status),
             );
-            return hasPending ? 3_000 : false;
+            return hasPending ? 20_000 : false;
         },
     });
 };

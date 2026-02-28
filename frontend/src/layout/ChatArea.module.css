@@ -1,0 +1,67 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    position: relative;
+}
+
+.scrollArea {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-8) var(--spacing-4);
+}
+
+.contentWrapper {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.welcomeWrapper {
+    text-align: center;
+    margin-top: 20vh;
+}
+
+.welcomeTitle {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-3xl);
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-4);
+    letter-spacing: -0.02em;
+}
+
+.welcomeSubtitle {
+    font-size: var(--font-size-lg);
+    color: var(--color-text-secondary);
+}
+
+.loading {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    margin-top: var(--spacing-4);
+    margin-left: var(--spacing-8);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-tertiary);
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.inputWrapper {
+    flex-shrink: 0;
+    padding: var(--spacing-10) var(--spacing-4) var(--spacing-6);
+    background: linear-gradient(to top, var(--color-bg) 70%, rgba(253, 253, 253, 0));
+    z-index: 10;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}

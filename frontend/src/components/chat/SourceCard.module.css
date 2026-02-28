@@ -1,0 +1,81 @@
+.card {
+    position: relative;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-3);
+    background-color: white;
+    cursor: pointer;
+    width: 220px;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.card:hover {
+    border-color: rgba(0, 0, 0, 0.2);
+    box-shadow: var(--shadow-sm);
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    margin-bottom: 10px;
+}
+
+.icon {
+    width: 14px;
+    height: 14px;
+    color: var(--color-text-tertiary);
+    transition: color 0.2s;
+}
+
+.card:hover .icon {
+    color: var(--color-text-primary);
+}
+
+.fileName {
+    font-size: 11px;
+    font-weight: 700;
+    font-family: var(--font-sans);
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.2s;
+}
+
+.card:hover .fileName {
+    color: var(--color-text-primary);
+}
+
+.snippet {
+    font-family: var(--font-sans);
+    font-size: 10.5px;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+    opacity: 0.9;
+    margin-bottom: var(--spacing-3);
+
+    /* Multi-line clamp */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.footer {
+    display: flex;
+    align-items: center;
+}
+
+.pageBadge {
+    font-size: 9px;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-tertiary);
+    border: 1px solid var(--color-border-light);
+    padding: 2px 6px;
+    border-radius: 2px;
+}

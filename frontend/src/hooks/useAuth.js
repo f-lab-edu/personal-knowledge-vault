@@ -28,21 +28,24 @@ export const useAuth = () => {
     retry: false,
   });
 
-  const clearUser = () => queryClient.setQueryData(AUTH_QUERY_KEY, null);
-  const handleAuthError = (error) => {
-    if (error.status === 401) clearUser();
-  };
-
   const logoutMutation = useMutation({
     mutationFn: logoutRequest,
-    onSuccess: clearUser,
-    onError: handleAuthError,
+    onSuccess: () => queryClient.setQueryData(AUTH_QUERY_KEY, null),
+    onError: (error) => {
+      if (error.status === 401) {
+        queryClient.setQueryData(AUTH_QUERY_KEY, null);
+      }
+    },
   });
 
   const withdrawMutation = useMutation({
     mutationFn: withdrawRequest,
-    onSuccess: clearUser,
-    onError: handleAuthError,
+    onSuccess: () => queryClient.setQueryData(AUTH_QUERY_KEY, null),
+    onError: (error) => {
+      if (error.status === 401) {
+        queryClient.setQueryData(AUTH_QUERY_KEY, null);
+      }
+    },
   });
 
   const login = useCallback(() => startOAuthLogin(), []);

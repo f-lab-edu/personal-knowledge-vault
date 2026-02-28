@@ -68,30 +68,6 @@ public class Source {
         this.updatedAt = Instant.now();
     }
 
-    public void startProcessing() {
-        if (this.status != SourceStatus.UPLOADED) {
-            throw new IllegalStateException("Source can only start processing from UPLOADED status, current: " + this.status);
-        }
-        this.status = SourceStatus.PROCESSING;
-        this.updatedAt = Instant.now();
-    }
-
-    public void complete() {
-        if (this.status != SourceStatus.PROCESSING) {
-            throw new IllegalStateException("Source can only be completed from PROCESSING status, current: " + this.status);
-        }
-        this.status = SourceStatus.COMPLETED;
-        this.updatedAt = Instant.now();
-    }
-
-    public void fail() {
-        if (this.status != SourceStatus.PROCESSING) {
-            throw new IllegalStateException("Source can only fail from PROCESSING status, current: " + this.status);
-        }
-        this.status = SourceStatus.FAILED;
-        this.updatedAt = Instant.now();
-    }
-
     public boolean isDeletable() {
         return this.status == SourceStatus.COMPLETED || this.status == SourceStatus.FAILED;
     }
