@@ -53,3 +53,6 @@ scripts/ragas/.venv/
 scripts/ragas/__pycache__/
 scripts/ragas/.env
 scripts/ragas/.env.local
+
+# Local architecture note (do not version)
+docs/arch-for-prod.md
