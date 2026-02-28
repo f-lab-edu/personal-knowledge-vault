@@ -1,14 +1,12 @@
-package com.pkv.history.dto;
-
-import com.pkv.chat.dto.SourceReference;
+package com.pkv.chat.dto;
 
 import java.time.Instant;
 import java.util.List;
 
-public record HistoryDetailResponse(
+public record ChatHistoryDetailResponse(
         String question,
         String answer,
-        List<SourceReference> sources,
+        List<ChatSourceResponse> sources,
         String status,
         Instant createdAt
 ) {

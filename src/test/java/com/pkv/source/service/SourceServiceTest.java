@@ -2,13 +2,16 @@ package com.pkv.source.service;
 
 import com.pkv.common.exception.ErrorCode;
 import com.pkv.common.exception.PkvException;
+import com.pkv.common.service.EmbeddingRepository;
+import com.pkv.chat.repository.ChatHistorySourceRepository;
+import com.pkv.member.repository.MemberRepository;
 import com.pkv.source.domain.Source;
 import com.pkv.source.domain.SourceStatus;
-import com.pkv.source.dto.PresignResponse;
 import com.pkv.source.dto.PresignRequest;
+import com.pkv.source.dto.PresignResponse;
 import com.pkv.source.dto.SourceResponse;
-import com.pkv.common.service.EmbeddingRepository;
 import com.pkv.source.repository.SourceRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -27,6 +30,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
@@ -47,10 +51,21 @@ class SourceServiceTest {
     @Mock
     private EmbeddingRepository embeddingRepository;
 
+    @Mock
+    private ChatHistorySourceRepository chatHistorySourceRepository;
+
+    @Mock
+    private MemberRepository memberRepository;
+
     @InjectMocks
     private SourceService sourceService;
 
     private static final Long MEMBER_ID = 1L;
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(memberRepository.existsByIdAndDeletedAtIsNull(MEMBER_ID)).thenReturn(true);
+    }
 
     private Source createSource(Long id, SourceStatus status) {
         Source source = Source.builder()
@@ -150,6 +165,21 @@ class SourceServiceTest {
             then(sourceRepository).should().deleteByMemberIdAndOriginalFileNameAndStatus(
                     MEMBER_ID, "설계서.pdf", SourceStatus.INITIATED);
         }
+
+        @Test
+        @DisplayName("삭제된 회원 또는 존재하지 않는 회원이면 MEMBER_NOT_FOUND 예외가 발생한다")
+        void memberNotFound() {
+            // given
+            PresignRequest request = new PresignRequest("설계서.pdf", 1024L);
+            given(memberRepository.existsByIdAndDeletedAtIsNull(MEMBER_ID)).willReturn(false);
+
+            // when & then
+            assertThatThrownBy(() -> sourceService.requestPresignedUrl(MEMBER_ID, request))
+                    .isInstanceOf(PkvException.class)
+                    .satisfies(e -> assertErrorCode(e, ErrorCode.MEMBER_NOT_FOUND));
+
+            then(sourceRepository).should(never()).save(any(Source.class));
+        }
     }
 
     @Nested
@@ -219,6 +249,20 @@ class SourceServiceTest {
                     .isInstanceOf(PkvException.class)
                     .satisfies(e -> assertErrorCode(e, ErrorCode.SOURCE_UPLOAD_NOT_CONFIRMED));
         }
+
+        @Test
+        @DisplayName("삭제된 회원 또는 존재하지 않는 회원이면 MEMBER_NOT_FOUND 예외가 발생한다")
+        void memberNotFound() {
+            // given
+            given(memberRepository.existsByIdAndDeletedAtIsNull(MEMBER_ID)).willReturn(false);
+
+            // when & then
+            assertThatThrownBy(() -> sourceService.confirmUpload(MEMBER_ID, 1L))
+                    .isInstanceOf(PkvException.class)
+                    .satisfies(e -> assertErrorCode(e, ErrorCode.MEMBER_NOT_FOUND));
+
+            then(sourceRepository).should(never()).findByIdAndMemberId(anyLong(), anyLong());
+        }
     }
 
     @Nested
@@ -238,6 +282,7 @@ class SourceServiceTest {
             sourceService.deleteSource(MEMBER_ID, 1L);
 
             // then
+            then(chatHistorySourceRepository).should().clearSourceIdBySourceId(1L);
             then(embeddingRepository).should().deleteBySourceId(1L);
             then(s3FileStorage).should().deleteObject(source.getStoragePath());
             then(sourceRepository).should().delete(source);
@@ -256,6 +301,7 @@ class SourceServiceTest {
             sourceService.deleteSource(MEMBER_ID, 1L);
 
             // then
+            then(chatHistorySourceRepository).should().clearSourceIdBySourceId(1L);
             then(embeddingRepository).should().deleteBySourceId(1L);
             then(s3FileStorage).should().deleteObject(source.getStoragePath());
             then(sourceRepository).should().delete(source);
@@ -275,6 +321,7 @@ class SourceServiceTest {
                     .isInstanceOf(PkvException.class)
                     .satisfies(e -> assertErrorCode(e, ErrorCode.SOURCE_DELETE_NOT_ALLOWED));
 
+            then(chatHistorySourceRepository).should(never()).clearSourceIdBySourceId(anyLong());
             then(embeddingRepository).should(never()).deleteBySourceId(anyLong());
         }
 
@@ -292,6 +339,7 @@ class SourceServiceTest {
                     .isInstanceOf(PkvException.class)
                     .satisfies(e -> assertErrorCode(e, ErrorCode.SOURCE_DELETE_NOT_ALLOWED));
 
+            then(chatHistorySourceRepository).should(never()).clearSourceIdBySourceId(anyLong());
             then(embeddingRepository).should(never()).deleteBySourceId(anyLong());
         }
 
@@ -307,6 +355,23 @@ class SourceServiceTest {
                     .isInstanceOf(PkvException.class)
                     .satisfies(e -> assertErrorCode(e, ErrorCode.SOURCE_NOT_FOUND));
 
+            then(chatHistorySourceRepository).should(never()).clearSourceIdBySourceId(anyLong());
+            then(embeddingRepository).should(never()).deleteBySourceId(anyLong());
+        }
+
+        @Test
+        @DisplayName("삭제된 회원 또는 존재하지 않는 회원이면 MEMBER_NOT_FOUND 예외가 발생한다")
+        void memberNotFound() {
+            // given
+            given(memberRepository.existsByIdAndDeletedAtIsNull(MEMBER_ID)).willReturn(false);
+
+            // when & then
+            assertThatThrownBy(() -> sourceService.deleteSource(MEMBER_ID, 1L))
+                    .isInstanceOf(PkvException.class)
+                    .satisfies(e -> assertErrorCode(e, ErrorCode.MEMBER_NOT_FOUND));
+
+            then(sourceRepository).should(never()).findByIdAndMemberId(anyLong(), anyLong());
+            then(chatHistorySourceRepository).should(never()).clearSourceIdBySourceId(anyLong());
             then(embeddingRepository).should(never()).deleteBySourceId(anyLong());
         }
     }

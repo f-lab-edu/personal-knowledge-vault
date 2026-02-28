@@ -2,6 +2,8 @@ package com.pkv.support;
 
 import com.pkv.source.service.EmbeddingJobProducer;
 import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -16,4 +18,10 @@ public abstract class IntegrationTestSupport {
 
     @MockitoBean
     protected EmbeddingStore<TextSegment> embeddingStore;
+
+    @MockitoBean
+    protected EmbeddingModel embeddingModel;
+
+    @MockitoBean
+    protected ChatModel chatModel;
 }

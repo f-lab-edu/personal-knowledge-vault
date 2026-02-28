@@ -7,6 +7,8 @@ import java.util.Optional;
 
 public interface MemberRepository extends JpaRepository<Member, Long> {
 
+    boolean existsByIdAndDeletedAtIsNull(Long id);
+
     // 삭제되지 않은 사용자만 조회 (기존 findById 대체)
     Optional<Member> findByIdAndDeletedAtIsNull(Long id);
 
