@@ -1,0 +1,169 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@theme inline {
+  --color-background: #FDFDFD;
+  --color-foreground: #121212;
+  --color-muted: #FAFAFA;
+  --color-muted-foreground: #555555;
+  --color-accent: #F2F2F2;
+  --color-accent-foreground: #121212;
+  --color-primary: #000000;
+  --color-primary-foreground: #FFFFFF;
+  --color-secondary: #FAFAFA;
+  --color-secondary-foreground: #121212;
+  --color-destructive: #D32F2F;
+  --color-destructive-foreground: #FFFFFF;
+  --color-border: #E0E0E0;
+  --color-input: #E0E0E0;
+  --color-ring: #000000;
+  --color-card: #FDFDFD;
+  --color-card-foreground: #121212;
+  --color-popover: #FDFDFD;
+  --color-popover-foreground: #121212;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+}
+
+:root {
+  /* Extended palette */
+  --color-tertiary: #888888;
+  --color-border-light: #F0F0F0;
+  --color-accent-hover: #333333;
+  --color-error: #D32F2F;
+  --color-error-hover: #b71c1c;
+  --color-success: #388E3C;
+  --color-warning: #FBC02D;
+  --color-info: #1976D2;
+  --color-scrollbar-hover: #C0C0C0;
+  --color-disabled: #CCCCCC;
+  --color-selection: #E6E6E6;
+
+  /* Typography */
+  --font-sans: 'Inter', sans-serif;
+
+  /* Layout */
+  --lnb-width: 260px;
+  --rnb-width: 300px;
+  --header-height: 60px;
+
+  /* Effects */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+
+  /* Z-index */
+  --z-scroll: 10;
+  --z-modal-overlay: 40;
+  --z-modal-content: 50;
+  --z-confirm-overlay: 60;
+  --z-confirm-content: 70;
+  --z-toast: 100;
+
+  /* Animation */
+  --transition-fast: 0.2s ease;
+  --transition-medium: 0.3s ease;
+  --radius: 0.625rem;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    box-sizing: border-box;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.5;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--color-foreground);
+  }
+
+  button {
+    font-family: var(--font-sans);
+    cursor: pointer;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-scrollbar-hover);
+  }
+}
+
+/* Animations — @keyframes are global, not layered */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+  }
+
+  .appLoading {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-sans);
+    color: var(--color-muted-foreground);
+    letter-spacing: -0.01em;
+  }
+}
