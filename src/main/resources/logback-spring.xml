@@ -14,6 +14,7 @@
             <appender-ref ref="CONSOLE"/>
         </root>
         <logger name="com.pkv" level="DEBUG"/>
+        <logger name="org.hibernate.SQL" level="DEBUG"/>
     </springProfile>
 
     <springProfile name="!local,!test">
@@ -22,8 +23,6 @@
         </root>
         <logger name="com.pkv" level="INFO"/>
     </springProfile>
-
-    <logger name="org.hibernate.SQL" level="DEBUG"/>
 
     <logger name="org.testcontainers" level="INFO"/>
 
