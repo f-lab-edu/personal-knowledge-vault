@@ -7,6 +7,7 @@ public record ChunkedDocument(
 ) {
     public record Chunk(
             String text,
+            String sourceChunkRef,
             Long sourceId,
             Long memberId,
             String fileName,

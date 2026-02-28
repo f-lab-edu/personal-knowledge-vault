@@ -75,10 +75,10 @@ public class ChatService {
         ChatResult result = sendMessageCore(memberId, request.content(), conversationContexts);
 
         ChatHistory chatHistory = saveChatHistory(memberId, session, request.content(), result);
-        saveChatHistorySources(chatHistory, result.sources());
+        saveChatHistorySources(chatHistory, result.retrievedSources());
         session.incrementQuestionCount();
 
-        return new ChatSendResponse(session.getSessionKey(), result.content(), result.sources());
+        return new ChatSendResponse(session.getSessionKey(), result.content(), result.responseSources());
     }
 
     private ChatResult sendMessageCore(Long memberId, String question, List<ConversationContext> conversationContexts) {
@@ -95,17 +95,17 @@ public class ChatService {
                     .filter(metadataKey("memberId").isEqualTo(memberId))
                     .build();
 
-            List<ChatSourceResponse> sources = embeddingStore.search(searchRequest).matches().stream()
+            List<RetrievedSource> retrievedSources = embeddingStore.search(searchRequest).matches().stream()
                     .map(EmbeddingMatch::embedded)
                     .filter(Objects::nonNull)
-                    .map(this::toSourceResponse)
+                    .map(this::toRetrievedSource)
                     .toList();
 
-            if (sources.isEmpty()) {
+            if (retrievedSources.isEmpty()) {
                 return irrelevant();
             }
 
-            String sourceBlock = buildSourceBlock(sources);
+            String sourceBlock = buildSourceBlock(toResponseSources(retrievedSources));
             String contextBlock = buildConversationContextBlock(conversationContexts);
             String prompt = promptTemplateService.renderUserPrompt(question, sourceBlock, contextBlock);
             var modelResponse = chatModel.chat(List.of(
@@ -119,7 +119,7 @@ public class ChatService {
                 return failed(FAILED_MESSAGE);
             }
 
-            return completed(answer, sources);
+            return completed(answer, retrievedSources);
         } catch (Exception e) {
             log.error("채팅 처리 실패. memberId={}", memberId, e);
             return failed(FAILED_MESSAGE);
@@ -164,30 +164,35 @@ public class ChatService {
         return chatHistoryRepository.save(chatHistory);
     }
 
-    private void saveChatHistorySources(ChatHistory chatHistory, List<ChatSourceResponse> sources) {
-        if (sources.isEmpty()) {
+    private void saveChatHistorySources(ChatHistory chatHistory, List<RetrievedSource> retrievedSources) {
+        if (retrievedSources.isEmpty()) {
             return;
         }
 
-        List<ChatHistorySource> entities = IntStream.range(0, sources.size())
-                .mapToObj(index -> ChatHistorySource.from(chatHistory, sources.get(index), index))
+        List<ChatHistorySource> entities = IntStream.range(0, retrievedSources.size())
+                .mapToObj(index -> {
+                    RetrievedSource source = retrievedSources.get(index);
+                    return ChatHistorySource.create(chatHistory, source.response(), source.sourceChunkRef(), index);
+                })
                 .toList();
 
         chatHistorySourceRepository.saveAll(entities);
     }
 
-    private ChatSourceResponse toSourceResponse(TextSegment segment) {
+    private RetrievedSource toRetrievedSource(TextSegment segment) {
         String fileName = segment.metadata() != null ? segment.metadata().getString("fileName") : null;
         Integer pageNumber = segment.metadata() != null ? segment.metadata().getInteger("pageNumber") : null;
         String snippet = truncateSnippet(segment.text());
         Long sourceId = extractSourceId(segment);
+        String sourceChunkRef = extractSourceChunkRef(segment);
 
-        return new ChatSourceResponse(
+        ChatSourceResponse response = new ChatSourceResponse(
                 sourceId,
                 fileName == null || fileName.isBlank() ? UNKNOWN_FILE_NAME : fileName,
                 pageNumber == null || pageNumber <= 0 ? DEFAULT_PAGE_NUMBER : pageNumber,
                 snippet
         );
+        return new RetrievedSource(response, sourceChunkRef);
     }
 
     private Long extractSourceId(TextSegment segment) {
@@ -201,6 +206,26 @@ public class ChatService {
             log.warn("sourceId 파싱 실패", e);
             return null;
         }
+    }
+
+    private String extractSourceChunkRef(TextSegment segment) {
+        if (segment.metadata() == null) {
+            return null;
+        }
+
+        try {
+            String sourceChunkRef = segment.metadata().getString("sourceChunkRef");
+            return (sourceChunkRef == null || sourceChunkRef.isBlank()) ? null : sourceChunkRef;
+        } catch (Exception e) {
+            log.warn("sourceChunkRef 파싱 실패", e);
+            return null;
+        }
+    }
+
+    private List<ChatSourceResponse> toResponseSources(List<RetrievedSource> retrievedSources) {
+        return retrievedSources.stream()
+                .map(RetrievedSource::response)
+                .toList();
     }
 
     private String truncateSnippet(String text) {
@@ -246,8 +271,8 @@ public class ChatService {
         );
     }
 
-    private ChatResult completed(String answer, List<ChatSourceResponse> sources) {
-        return new ChatResult(ChatResponseStatus.COMPLETED, answer, sources);
+    private ChatResult completed(String answer, List<RetrievedSource> retrievedSources) {
+        return new ChatResult(ChatResponseStatus.COMPLETED, answer, retrievedSources);
     }
 
     private ChatResult irrelevant() {
@@ -258,7 +283,15 @@ public class ChatService {
         return new ChatResult(ChatResponseStatus.FAILED, message, List.of());
     }
 
-    private record ChatResult(ChatResponseStatus status, String content, List<ChatSourceResponse> sources) {
+    private record ChatResult(ChatResponseStatus status, String content, List<RetrievedSource> retrievedSources) {
+        private List<ChatSourceResponse> responseSources() {
+            return retrievedSources.stream()
+                    .map(RetrievedSource::response)
+                    .toList();
+        }
+    }
+
+    private record RetrievedSource(ChatSourceResponse response, String sourceChunkRef) {
     }
 
     private record ConversationContext(String question, String answer) {

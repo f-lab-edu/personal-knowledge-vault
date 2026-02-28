@@ -2,6 +2,7 @@ package com.pkv.chat.service;
 
 import com.pkv.chat.ChatPolicy;
 import com.pkv.chat.domain.ChatHistory;
+import com.pkv.chat.domain.ChatHistorySource;
 import com.pkv.chat.domain.ChatSession;
 import com.pkv.chat.dto.ChatSendRequest;
 import com.pkv.chat.dto.ChatSendResponse;
@@ -140,7 +141,8 @@ class ChatServiceTest {
         Metadata metadata = new Metadata()
                 .put("fileName", "design.md")
                 .put("pageNumber", 3)
-                .put("sourceId", 99L);
+                .put("sourceId", 99L)
+                .put("sourceChunkRef", "99:0");
         TextSegment segment = TextSegment.from("팩토리 패턴은 객체 생성을 캡슐화한다.", metadata);
         EmbeddingSearchResult<TextSegment> searchResult = new EmbeddingSearchResult<>(List.of(
                 new EmbeddingMatch<>(0.95, "embedding-1", Embedding.from(new float[]{0.2f}), segment)
@@ -177,6 +179,12 @@ class ChatServiceTest {
         verify(promptTemplateService).renderUserPrompt(eq(QUESTION), sourceBlockCaptor.capture(), eq(""));
         verify(chatModel).chat(anyList());
         assertThat(sourceBlockCaptor.getValue()).contains("file=design.md");
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<ChatHistorySource>> historySourcesCaptor = ArgumentCaptor.forClass(List.class);
+        verify(chatHistorySourceRepository).saveAll(historySourcesCaptor.capture());
+        assertThat(historySourcesCaptor.getValue()).singleElement().satisfies(source ->
+                assertThat(source.getSourceChunkRef()).isEqualTo("99:0"));
     }
 
     private ChatSession existingSession(Long id, String sessionKey) {
