@@ -21,24 +21,22 @@ public enum ErrorCode {
     // Member
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "M001", "회원을 찾을 수 없습니다."),
 
-    // Chat
-    CHAT_SESSION_NOT_FOUND(HttpStatus.BAD_REQUEST, "Q001", "유효하지 않은 세션입니다."),
-    CHAT_SESSION_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "Q002",
-            "현재 세션 질문 한도(5회)에 도달했습니다. 새 대화를 시작해주세요"),
+    // Thread / Turn
+    THREAD_NOT_FOUND(HttpStatus.BAD_REQUEST, "Q001", "유효하지 않은 스레드입니다."),
+    THREAD_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "Q002",
+            "현재 스레드 턴 한도(5회)에 도달했습니다. 새 대화를 시작해주세요"),
+    TURN_NOT_FOUND(HttpStatus.NOT_FOUND, "H001", "턴을 찾을 수 없습니다."),
 
-    // History
-    HISTORY_NOT_FOUND(HttpStatus.NOT_FOUND, "H001", "히스토리를 찾을 수 없습니다."),
-
-    // Source
-    SOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "S001", "소스를 찾을 수 없습니다."),
-    SOURCE_NAME_INVALID(HttpStatus.BAD_REQUEST, "S002", "파일명은 한글, 영문, 숫자, _, -만 허용되며 최대 30자입니다."),
-    SOURCE_EXTENSION_NOT_SUPPORTED(HttpStatus.BAD_REQUEST, "S003", "지원하지 않는 파일 형식입니다. (pdf, txt, md)"),
-    SOURCE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "S004", "파일 크기는 30MB를 초과할 수 없습니다."),
-    SOURCE_COUNT_EXCEEDED(HttpStatus.BAD_REQUEST, "S005", "파일은 최대 30개까지 업로드할 수 있습니다."),
-    SOURCE_TOTAL_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "S006", "총 저장 용량 300MB를 초과합니다."),
-    SOURCE_NAME_DUPLICATED(HttpStatus.CONFLICT, "S007", "동일한 이름의 파일이 이미 존재합니다."),
-    SOURCE_DELETE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "S008", "현재 상태에서는 삭제할 수 없습니다."),
-    SOURCE_UPLOAD_NOT_CONFIRMED(HttpStatus.BAD_REQUEST, "S009", "파일 업로드가 확인되지 않았습니다."),
+    // Document
+    DOCUMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "S001", "문서를 찾을 수 없습니다."),
+    DOCUMENT_NAME_INVALID(HttpStatus.BAD_REQUEST, "S002", "파일명은 한글, 영문, 숫자, _, -만 허용되며 최대 30자입니다."),
+    DOCUMENT_EXTENSION_NOT_SUPPORTED(HttpStatus.BAD_REQUEST, "S003", "지원하지 않는 파일 형식입니다. (pdf, txt, md)"),
+    DOCUMENT_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "S004", "파일 크기는 30MB를 초과할 수 없습니다."),
+    DOCUMENT_COUNT_EXCEEDED(HttpStatus.BAD_REQUEST, "S005", "파일은 최대 30개까지 업로드할 수 있습니다."),
+    DOCUMENT_TOTAL_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "S006", "총 저장 용량 300MB를 초과합니다."),
+    DOCUMENT_NAME_DUPLICATED(HttpStatus.CONFLICT, "S007", "동일한 이름의 파일이 이미 존재합니다."),
+    DOCUMENT_DELETE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "S008", "현재 상태에서는 삭제할 수 없습니다."),
+    DOCUMENT_UPLOAD_NOT_CONFIRMED(HttpStatus.BAD_REQUEST, "S009", "파일 업로드가 확인되지 않았습니다."),
 
     // 임베딩 파이프라인(파싱/청킹/임베딩)
     DOCUMENT_PARSE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "W001", "문서 파싱에 실패했습니다."),

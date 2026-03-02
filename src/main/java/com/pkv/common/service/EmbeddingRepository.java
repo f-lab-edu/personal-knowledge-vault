@@ -16,9 +16,9 @@ public class EmbeddingRepository {
 
     private final EmbeddingStore<TextSegment> embeddingStore;
 
-    public void deleteBySourceId(Long sourceId) {
-        Filter filter = metadataKey("sourceId").isEqualTo(sourceId);
+    public void deleteByDocumentId(Long documentId) {
+        Filter filter = metadataKey("documentId").isEqualTo(documentId);
         embeddingStore.removeAll(filter);
-        log.info("벡터 삭제 완료: sourceId={}", sourceId);
+        log.info("벡터 삭제 완료: documentId={}", documentId);
     }
 }

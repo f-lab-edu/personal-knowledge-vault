@@ -9,11 +9,12 @@ import dev.langchain4j.data.document.DocumentSplitter;
 import dev.langchain4j.data.document.splitter.DocumentSplitters;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.openai.OpenAiTokenCountEstimator;
-import java.util.ArrayList;
-import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @Profile("worker")
@@ -29,9 +30,8 @@ public class TextChunker {
                 maxTokens, overlapTokens, new OpenAiTokenCountEstimator(embeddingModelName)
         );
     }
-    
-    public ChunkedDocument chunk(ParsedDocument parsedDocument, Long sourceId, Long memberId,
-                                  String fileName) {
+
+    public ChunkedDocument chunk(ParsedDocument parsedDocument, Long documentId, Long memberId, String fileName) {
         Document document = Document.from(parsedDocument.fullText());
         List<TextSegment> segments = splitter.split(document);
 
@@ -47,7 +47,7 @@ public class TextChunker {
                 searchFrom = charOffset + 1;
             }
 
-            chunks.add(new Chunk(segmentText, sourceId, memberId, fileName, pageNumber));
+            chunks.add(new Chunk(segmentText, documentId, memberId, fileName, pageNumber));
         }
 
         return new ChunkedDocument(chunks);
