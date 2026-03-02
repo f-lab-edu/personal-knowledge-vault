@@ -63,20 +63,6 @@ public class ThreadController {
         return ResponseEntity.ok(ApiResponse.success(threadQueryService.getTurnDetail(memberId, threadId, turnId)));
     }
 
-    @Operation(summary = "턴 삭제")
-    @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "삭제 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패")
-    })
-    @DeleteMapping("/{threadId}/turns/{turnId}")
-    public ResponseEntity<ApiResponse<Void>> deleteTurn(
-            @AuthenticationPrincipal Long memberId,
-            @PathVariable String threadId,
-            @PathVariable Long turnId) {
-        threadQueryService.deleteTurn(memberId, threadId, turnId);
-        return ResponseEntity.ok(ApiResponse.success());
-    }
-
     @Operation(summary = "스레드 삭제")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "삭제 성공"),
