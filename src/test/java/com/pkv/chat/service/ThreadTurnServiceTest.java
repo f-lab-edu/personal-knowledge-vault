@@ -68,7 +68,7 @@ class ThreadTurnServiceTest {
         ThreadTurnCreateRequest request = new ThreadTurnCreateRequest("thread-1", PROMPT);
         ChatThread thread = existingThread(10L, "thread-1");
 
-        given(chatThreadRepository.findByMemberIdAndThreadKeyForUpdate(MEMBER_ID, "thread-1"))
+        given(chatThreadRepository.findByMemberIdAndThreadKey(MEMBER_ID, "thread-1"))
                 .willReturn(Optional.of(thread));
         given(threadTurnRepository.findByThread_IdOrderByCreatedAtDesc(org.mockito.ArgumentMatchers.eq(10L), any(Pageable.class)))
                 .willReturn(List.of());
@@ -93,7 +93,7 @@ class ThreadTurnServiceTest {
     @DisplayName("존재하지 않는 threadId면 THREAD_NOT_FOUND 예외가 발생한다")
     void createTurnThrowsWhenThreadNotFound() {
         ThreadTurnCreateRequest request = new ThreadTurnCreateRequest("missing-thread", PROMPT);
-        given(chatThreadRepository.findByMemberIdAndThreadKeyForUpdate(MEMBER_ID, "missing-thread"))
+        given(chatThreadRepository.findByMemberIdAndThreadKey(MEMBER_ID, "missing-thread"))
                 .willReturn(Optional.empty());
 
         assertThatThrownBy(() -> threadTurnService.createTurn(MEMBER_ID, request))
@@ -112,7 +112,7 @@ class ThreadTurnServiceTest {
                 .build();
         ReflectionTestUtils.setField(thread, "turnCount", ThreadPolicy.MAX_THREAD_TURN_COUNT);
 
-        given(chatThreadRepository.findByMemberIdAndThreadKeyForUpdate(MEMBER_ID, "thread-1"))
+        given(chatThreadRepository.findByMemberIdAndThreadKey(MEMBER_ID, "thread-1"))
                 .willReturn(Optional.of(thread));
 
         assertThatThrownBy(() -> threadTurnService.createTurn(MEMBER_ID, request))

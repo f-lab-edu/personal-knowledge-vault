@@ -139,7 +139,7 @@ public class ThreadTurnService {
             return createThread(memberId, request.prompt());
         }
 
-        return chatThreadRepository.findByMemberIdAndThreadKeyForUpdate(memberId, request.threadId())
+        return chatThreadRepository.findByMemberIdAndThreadKey(memberId, request.threadId())
                 .orElseThrow(() -> new PkvException(ErrorCode.THREAD_NOT_FOUND));
     }
 
