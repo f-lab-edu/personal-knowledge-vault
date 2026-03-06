@@ -1,4 +1,4 @@
-CREATE TABLE sources (
+CREATE TABLE documents (
     id BIGINT NOT NULL AUTO_INCREMENT,
 
     member_id BIGINT NOT NULL,
@@ -18,6 +18,6 @@ CREATE TABLE sources (
     updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
 
     PRIMARY KEY (id),
-    CONSTRAINT fk_sources_member FOREIGN KEY (member_id) REFERENCES users(id)
+    CONSTRAINT fk_documents_member FOREIGN KEY (member_id) REFERENCES users(id)
 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
