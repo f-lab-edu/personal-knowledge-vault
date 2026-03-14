@@ -1,7 +1,7 @@
-import { useState, useRef } from 'react';
+import { useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { FileText, UploadCloud } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { Progress } from '@/components/ui/progress';
 import {
     Dialog,
@@ -12,7 +12,7 @@ import {
     DialogFooter,
     DialogClose,
 } from '@/components/ui/dialog';
-import { useUploadSource } from '@/hooks/useSource';
+import { useUploadDocument } from '@/hooks/useDocument';
 import { formatFileSize } from '@/utils/format';
 import { validateFile, ACCEPT_EXTENSIONS } from '@/utils/validation';
 import { getErrorMessage } from '@/utils/error';
@@ -23,7 +23,7 @@ const UploadModal = ({ open, onOpenChange }) => {
     const [progress, setProgress] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef(null);
-    const uploadMutation = useUploadSource();
+    const uploadMutation = useUploadDocument();
 
     const uploading = uploadMutation.isPending;
 
@@ -121,8 +121,8 @@ const UploadModal = ({ open, onOpenChange }) => {
 
                 <div
                     className={cn(
-                        "border-2 border-dashed border-[var(--color-border-light)] rounded-md p-8 text-center mb-2 cursor-pointer transition-all hover:bg-muted hover:border-border",
-                        isDragging && "bg-muted border-primary"
+                        'border-2 border-dashed border-[var(--color-border-light)] rounded-md p-8 text-center mb-2 cursor-pointer transition-all hover:bg-muted hover:border-border',
+                        isDragging && 'bg-muted border-primary',
                     )}
                     onClick={handleDropzoneClick}
                     onDragOver={handleDragOver}

@@ -3,21 +3,21 @@ import ChatInput from '@/components/chat/ChatInput';
 import MessageList from '@/components/chat/MessageList';
 
 const ChatArea = ({
-    sessionId,
+    threadId,
     messages,
     loading,
-    sessionEnded,
+    threadEnded,
     isRestoring,
     onSend,
-    onStartNewSession,
+    onStartNewThread,
 }) => {
     return (
         <div className="flex flex-col h-full w-full relative">
-            {(messages.length > 0 || sessionId) && (
+            {(messages.length > 0 || threadId) && (
                 <div className="flex justify-end items-center shrink-0 px-4 py-3 border-b">
                     <button
                         className="px-4 py-2 text-sm font-medium text-muted-foreground bg-muted border rounded-md cursor-pointer transition-all hover:text-foreground hover:bg-accent"
-                        onClick={onStartNewSession}
+                        onClick={onStartNewThread}
                     >
                         새 대화
                     </button>
@@ -50,7 +50,7 @@ const ChatArea = ({
             </div>
 
             <div className="shrink-0 px-4 pt-10 pb-6 bg-gradient-to-t from-background from-70% to-transparent z-10">
-                <ChatInput onSend={onSend} disabled={loading || sessionEnded || isRestoring} />
+                <ChatInput onSend={onSend} disabled={loading || threadEnded || isRestoring} />
             </div>
         </div>
     );

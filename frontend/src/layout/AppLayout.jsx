@@ -2,21 +2,21 @@ import { useState } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import Sidebar from './Sidebar';
 import ChatArea from './ChatArea';
-import HistoryPanel from './HistoryPanel';
-import { useChatSession } from '@/hooks/useChatSession';
+import ThreadPanel from './ThreadPanel';
+import { useThreadChat } from '@/hooks/useThreadChat';
 
 const AppLayout = () => {
-    const [isHistoryOpen, setIsHistoryOpen] = useState(true);
+    const [isThreadPanelOpen, setIsThreadPanelOpen] = useState(true);
     const {
-        sessionId,
+        threadId,
         messages,
         loading,
-        sessionEnded,
+        threadEnded,
         isRestoring,
-        startNewSession,
-        selectSession,
+        startNewThread,
+        selectThread,
         handleSend,
-    } = useChatSession();
+    } = useThreadChat();
 
     return (
         <div className="flex h-screen w-screen overflow-hidden bg-background">
@@ -25,28 +25,28 @@ const AppLayout = () => {
             </aside>
             <main className="flex-1 h-full flex flex-col relative">
                 <ChatArea
-                    sessionId={sessionId}
+                    threadId={threadId}
                     messages={messages}
                     loading={loading}
-                    sessionEnded={sessionEnded}
+                    threadEnded={threadEnded}
                     isRestoring={isRestoring}
                     onSend={handleSend}
-                    onStartNewSession={startNewSession}
+                    onStartNewThread={startNewThread}
                 />
             </main>
-            <aside className={isHistoryOpen
+            <aside className={isThreadPanelOpen
                 ? 'w-[var(--rnb-width)] h-full border-l bg-muted'
                 : 'hidden'}
             >
-                <HistoryPanel
-                    activeSessionId={sessionId}
-                    onSelectSession={selectSession}
+                <ThreadPanel
+                    activeThreadId={threadId}
+                    onSelectThread={selectThread}
                 />
             </aside>
-            {!isHistoryOpen && (
+            {!isThreadPanelOpen && (
                 <button
                     className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md bg-muted border text-muted-foreground hover:text-foreground transition-colors"
-                    onClick={() => setIsHistoryOpen(true)}
+                    onClick={() => setIsThreadPanelOpen(true)}
                     aria-label="기록 패널 열기"
                 >
                     <ChevronLeft className="size-4 rotate-180" />

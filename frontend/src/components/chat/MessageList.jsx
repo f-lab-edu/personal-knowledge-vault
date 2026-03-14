@@ -26,14 +26,14 @@ const MessageList = ({ messages }) => {
 
     return (
         <div className="flex flex-col gap-10 pb-4">
-            {messages.map((msg) => (
-                <div key={msg.id}>
-                    {msg.role === 'user' ? (
-                        <UserMessage content={msg.content} />
-                    ) : msg.role === 'system' ? (
-                        <SystemMessage content={msg.content} />
+            {messages.map((message) => (
+                <div key={message.id}>
+                    {message.role === 'user' ? (
+                        <UserMessage content={message.content} />
+                    ) : message.role === 'system' ? (
+                        <SystemMessage content={message.content} />
                     ) : (
-                        <AnswerBubble content={msg.content} sources={msg.sources} />
+                        <AnswerBubble content={message.content} citations={message.citations} />
                     )}
                 </div>
             ))}

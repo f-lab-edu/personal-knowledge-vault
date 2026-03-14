@@ -1,6 +1,6 @@
-import HistoryList from '@/components/history/HistoryList';
+import ThreadList from '@/components/thread/ThreadList';
 
-const HistoryPanel = ({ activeSessionId, onSelectSession }) => {
+const ThreadPanel = ({ activeThreadId, onSelectThread }) => {
     return (
         <div className="flex flex-col h-full p-5">
             <div className="mb-8">
@@ -9,13 +9,13 @@ const HistoryPanel = ({ activeSessionId, onSelectSession }) => {
             </div>
 
             <div className="flex-1 overflow-hidden">
-                <HistoryList
-                    activeSessionId={activeSessionId}
-                    onSelectSession={onSelectSession}
+                <ThreadList
+                    activeThreadId={activeThreadId}
+                    onSelectThread={onSelectThread}
                 />
             </div>
         </div>
     );
 };
 
-export default HistoryPanel;
+export default ThreadPanel;

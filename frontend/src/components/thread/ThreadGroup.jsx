@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import SessionQuestions from './SessionQuestions';
+import ThreadTurns from './ThreadTurns';
 
-const SessionGroup = ({ session, isActive, onSelectSession, onSelectHistory }) => {
+const ThreadGroup = ({ thread, isActive, onSelectThread, onSelectTurn }) => {
     const [expanded, setExpanded] = useState(isActive);
     const isExpanded = isActive || expanded;
 
-    const handleSelectSession = () => {
+    const handleSelectThread = () => {
         setExpanded((prev) => !prev);
-        onSelectSession?.(session.sessionId);
+        onSelectThread?.(thread.threadId);
     };
 
     return (
@@ -19,27 +19,27 @@ const SessionGroup = ({ session, isActive, onSelectSession, onSelectHistory }) =
                 ].join(' ')}
                 role="button"
                 tabIndex={0}
-                onClick={handleSelectSession}
+                onClick={handleSelectThread}
                 onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        handleSelectSession();
+                        handleSelectThread();
                     }
                 }}
             >
-                <span className="flex justify-between items-center flex-1 min-w-0">
-                    <span>{isExpanded ? '▾' : '▸'} {session.title}</span>
-                    <span className="text-[0.625rem] font-normal text-[var(--color-tertiary)]">{session.questionCount}개 질문</span>
+                <span className="flex justify-between items-center flex-1 min-w-0 gap-3">
+                    <span className="truncate">{isExpanded ? '▾' : '▸'} {thread.title}</span>
+                    <span className="text-[0.625rem] font-normal text-[var(--color-tertiary)] whitespace-nowrap">{thread.turnCount}개 질문</span>
                 </span>
             </div>
             {isExpanded && (
-                <SessionQuestions
-                    sessionId={session.sessionId}
-                    onSelectHistory={onSelectHistory}
+                <ThreadTurns
+                    threadId={thread.threadId}
+                    onSelectTurn={onSelectTurn}
                 />
             )}
         </div>
     );
 };
 
-export default SessionGroup;
+export default ThreadGroup;

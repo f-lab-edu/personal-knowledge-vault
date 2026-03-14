@@ -1,25 +1,25 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, LogOut } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import FileList from '@/components/file/FileList';
 import UploadModal from '@/components/file/UploadModal';
 import { useAuth } from '@/hooks/useAuth';
-import { useSources } from '@/hooks/useSource';
+import { useDocuments } from '@/hooks/useDocument';
 import { toast } from 'sonner';
 import { confirm } from '@/stores/confirmStore';
 import { MAX_FILES, MAX_STORAGE_MB } from '@/utils/constants';
 
 const Sidebar = () => {
     const { logout, withdraw, isLoggingOut, isWithdrawing } = useAuth();
-    const { data: sources = [] } = useSources();
+    const { data: documents = [] } = useDocuments();
     const navigate = useNavigate();
     const [isUploadOpen, setIsUploadOpen] = useState(false);
 
-    const fileCount = sources.length;
-    const totalBytes = sources.reduce((sum, s) => sum + (s.fileSize || 0), 0);
+    const documentCount = documents.length;
+    const totalBytes = documents.reduce((sum, document) => sum + (document.fileSize || 0), 0);
     const totalMB = totalBytes / (1024 * 1024);
-    const usageText = `${fileCount}/${MAX_FILES} 파일 사용 중 (${totalMB < 1 ? totalMB.toFixed(1) : Math.round(totalMB)}MB/${MAX_STORAGE_MB}MB)`;
+    const usageText = `${documentCount}/${MAX_FILES} 문서 사용 중 (${totalMB < 1 ? totalMB.toFixed(1) : Math.round(totalMB)}MB/${MAX_STORAGE_MB}MB)`;
 
     const handleLogout = async () => {
         if (isLoggingOut) return;
@@ -53,7 +53,7 @@ const Sidebar = () => {
     return (
         <div className="flex flex-col h-full p-5 bg-muted/50">
             <div className="mb-8">
-                <h2 className="font-bold text-xl text-foreground mb-1 tracking-tight">내 보관함</h2>
+                <h2 className="font-bold text-xl text-foreground mb-1 tracking-tight">문서 보관함</h2>
                 <p className="text-xs text-[var(--color-tertiary)] font-medium uppercase tracking-widest">{usageText}</p>
             </div>
 

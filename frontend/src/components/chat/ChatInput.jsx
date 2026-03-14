@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ArrowRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 
 const ChatInput = ({ onSend, disabled }) => {
     const [text, setText] = useState('');

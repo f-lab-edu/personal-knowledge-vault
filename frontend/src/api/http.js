@@ -1,4 +1,5 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const API_CONTRACT_MODE = (import.meta.env.VITE_API_CONTRACT || 'auto').toLowerCase();
 
 const normalizePath = (path) => (path.startsWith('/') ? path : `/${path}`);
 
@@ -61,3 +62,38 @@ export const request = async (path, options = {}) => {
 };
 
 export const unwrapData = (payload) => payload?.data ?? null;
+
+const shouldFallbackToNext = (error) =>
+    error?.status === 404 || error?.status === 405;
+
+export const requestWithFallback = async (candidates) => {
+    const filteredCandidates = (candidates || []).filter(Boolean);
+
+    if (!filteredCandidates.length) {
+        throw new Error('No request candidates provided.');
+    }
+
+    const selectedCandidates = API_CONTRACT_MODE === 'new'
+        ? filteredCandidates.slice(0, 1)
+        : API_CONTRACT_MODE === 'legacy'
+            ? filteredCandidates.slice(-1)
+            : filteredCandidates;
+
+    let lastError = null;
+
+    for (let index = 0; index < selectedCandidates.length; index += 1) {
+        const candidate = selectedCandidates[index];
+
+        try {
+            return await request(candidate.path, candidate.options);
+        } catch (error) {
+            lastError = error;
+
+            if (index === selectedCandidates.length - 1 || !shouldFallbackToNext(error)) {
+                throw error;
+            }
+        }
+    }
+
+    throw lastError ?? new Error('Request failed.');
+};
