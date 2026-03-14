@@ -1,6 +1,6 @@
 import HistoryList from '@/components/history/HistoryList';
 
-const HistoryPanel = () => {
+const HistoryPanel = ({ activeSessionId, onSelectSession }) => {
     return (
         <div className="flex flex-col h-full p-5">
             <div className="mb-8">
@@ -9,7 +9,10 @@ const HistoryPanel = () => {
             </div>
 
             <div className="flex-1 overflow-hidden">
-                <HistoryList />
+                <HistoryList
+                    activeSessionId={activeSessionId}
+                    onSelectSession={onSelectSession}
+                />
             </div>
         </div>
     );

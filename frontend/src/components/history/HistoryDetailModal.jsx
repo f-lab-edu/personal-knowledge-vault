@@ -9,11 +9,11 @@ import SourceCard from '@/components/chat/SourceCard';
 import { STATUS_LABEL } from '@/utils/constants';
 import { formatDate } from '@/utils/format';
 
-const HistoryDetailModal = ({ historyId, onClose }) => {
-    const { data: detail, isLoading } = useHistoryDetail(historyId);
+const HistoryDetailModal = ({ chatHistoryId, onClose }) => {
+    const { data: detail, isLoading } = useHistoryDetail(chatHistoryId);
 
     return (
-        <Dialog open={!!historyId} onOpenChange={(o) => { if (!o) onClose(); }}>
+        <Dialog open={!!chatHistoryId} onOpenChange={(o) => { if (!o) onClose(); }}>
             <DialogContent className="max-w-[560px]" showCloseButton={false}>
                 {isLoading ? (
                     <div className="text-sm text-[var(--color-tertiary)] p-6 text-center">불러오는 중...</div>

@@ -23,7 +23,7 @@ export const useSources = () => {
             const hasPending = query.state.data?.some((s) =>
                 POLLING_STATUSES.includes(s.status),
             );
-            return hasPending ? 20_000 : false;
+            return hasPending ? 3_000 : false;
         },
     });
 };
