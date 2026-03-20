@@ -2,7 +2,7 @@ package com.pkv.worker.service;
 
 import com.pkv.common.exception.ErrorCode;
 import com.pkv.common.exception.PkvException;
-import com.pkv.source.service.S3FileStorage;
+import com.pkv.document.service.S3FileStorage;
 import com.pkv.worker.dto.ParsedDocument;
 import com.pkv.worker.dto.ParsedDocument.PageOffset;
 import java.io.IOException;

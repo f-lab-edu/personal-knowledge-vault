@@ -8,7 +8,7 @@ public record ChunkedDocument(
     public record Chunk(
             String text,
             String sourceChunkRef,
-            Long sourceId,
+            Long documentId,
             Long memberId,
             String fileName,
             int pageNumber

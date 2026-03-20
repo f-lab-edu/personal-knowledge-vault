@@ -1,6 +1,6 @@
 package com.pkv.support;
 
-import com.pkv.source.service.EmbeddingJobProducer;
+import com.pkv.document.service.EmbeddingJobProducer;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;

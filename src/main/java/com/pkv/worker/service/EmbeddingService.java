@@ -23,7 +23,6 @@ import java.util.List;
 public class EmbeddingService {
 
     private final EmbeddingModel embeddingModel;
-
     private final EmbeddingStore<TextSegment> embeddingStore;
 
     public void embed(ChunkedDocument chunkedDocument) {
@@ -32,7 +31,6 @@ public class EmbeddingService {
                 .toList();
 
         try {
-            // TODO: 문서 크기가 커질 경우 embedAll/addAll을 코드 레벨에서 고정 크기 분할 처리 검토
             Response<List<Embedding>> response = embeddingModel.embedAll(segments);
             List<Embedding> embeddings = response.content();
             embeddingStore.addAll(embeddings, segments);
@@ -46,7 +44,7 @@ public class EmbeddingService {
         Metadata metadata = new Metadata()
                 .put("memberId", chunk.memberId())
                 .put("sourceChunkRef", chunk.sourceChunkRef())
-                .put("sourceId", chunk.sourceId())
+                .put("documentId", chunk.documentId())
                 .put("fileName", chunk.fileName())
                 .put("pageNumber", chunk.pageNumber());
         return TextSegment.from(chunk.text(), metadata);
