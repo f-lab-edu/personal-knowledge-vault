@@ -1,0 +1,5 @@
+ragas==0.2.15
+openai>=1.50.0,<2
+requests>=2.32.0,<3
+PyMySQL>=1.1.1,<2
+python-dotenv>=1.0.1,<2

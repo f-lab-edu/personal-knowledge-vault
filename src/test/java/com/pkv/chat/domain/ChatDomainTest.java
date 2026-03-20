@@ -49,11 +49,13 @@ class ChatDomainTest {
         ChatHistory chatHistory = ChatHistory.create(1L, session, " 질문 ", ChatResponseStatus.COMPLETED, "답변");
         String longSnippet = "a".repeat(ChatHistorySource.MAX_SNIPPET_LENGTH + 50);
         ChatSourceResponse sourceReference = new ChatSourceResponse(10L, "doc.pdf", 3, longSnippet);
+        String sourceChunkRef = "10:0";
 
-        ChatHistorySource historySource = ChatHistorySource.from(chatHistory, sourceReference, 0);
+        ChatHistorySource historySource = ChatHistorySource.create(chatHistory, sourceReference, sourceChunkRef, 0);
 
         assertThat(historySource.getChatHistory()).isEqualTo(chatHistory);
         assertThat(chatHistory.getQuestion()).isEqualTo("질문");
         assertThat(historySource.getSnippet()).hasSize(ChatHistorySource.MAX_SNIPPET_LENGTH);
+        assertThat(historySource.getSourceChunkRef()).isEqualTo(sourceChunkRef);
     }
 }
