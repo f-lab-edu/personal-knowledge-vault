@@ -2,8 +2,10 @@ package com.pkv.chat.domain;
 
 import com.pkv.chat.dto.CitationResponse;
 import jakarta.persistence.Column;
+import jakarta.persistence.ConstraintMode;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -30,7 +32,7 @@ public class TurnCitation {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "turn_id", nullable = false)
+    @JoinColumn(name = "turn_id", nullable = false, foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private ThreadTurn threadTurn;
 
     @Column(name = "document_id")
@@ -42,6 +44,10 @@ public class TurnCitation {
     @Column(name = "document_page_number")
     private Integer documentPageNumber;
 
+    // 실제 청크 추적용 참조값(`<sourceId>:<chunkIndex>`). source_id가 NULL이면 원본 소스는 삭제된 상태이며, 이 값은 이력 추적용으로만 유지된다.
+    @Column(name = "source_chunk_ref", length = 64)
+    private String sourceChunkRef;
+
     @Column(name = "snippet", nullable = false, length = MAX_SNIPPET_LENGTH)
     private String snippet;
 
@@ -49,6 +55,15 @@ public class TurnCitation {
     private int displayOrder;
 
     public static TurnCitation from(ThreadTurn threadTurn, CitationResponse citation, int displayOrder) {
+        return from(threadTurn, citation, null, displayOrder);
+    }
+
+    public static TurnCitation from(
+            ThreadTurn threadTurn,
+            CitationResponse citation,
+            String sourceChunkRef,
+            int displayOrder
+    ) {
         Objects.requireNonNull(citation, "citation is required");
 
         return new TurnCitation(
@@ -56,6 +71,7 @@ public class TurnCitation {
                 citation.documentId(),
                 citation.fileName(),
                 citation.pageNumber(),
+                sourceChunkRef,
                 citation.snippet(),
                 displayOrder
         );
@@ -67,6 +83,7 @@ public class TurnCitation {
             Long documentId,
             String documentFileName,
             Integer documentPageNumber,
+            String sourceChunkRef,
             String snippet,
             int displayOrder
     ) {
@@ -74,6 +91,7 @@ public class TurnCitation {
         this.documentId = documentId;
         this.documentFileName = Objects.requireNonNull(documentFileName, "documentFileName is required");
         this.documentPageNumber = documentPageNumber;
+        this.sourceChunkRef = sourceChunkRef;
         this.snippet = normalizeSnippet(snippet);
         this.displayOrder = displayOrder;
     }

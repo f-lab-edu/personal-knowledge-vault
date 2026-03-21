@@ -37,8 +37,10 @@ public class TextChunker {
 
         List<Chunk> chunks = new ArrayList<>();
         int searchFrom = 0;
-        for (TextSegment segment : segments) {
+        for (int index = 0; index < segments.size(); index++) {
+            TextSegment segment = segments.get(index);
             String segmentText = segment.text();
+            String sourceChunkRef = documentId == null ? null : documentId + ":" + index;
 
             int charOffset = findCharOffset(parsedDocument.fullText(), segmentText, searchFrom);
             int pageNumber = resolvePageNumber(parsedDocument.pageOffsets(), charOffset);
@@ -47,7 +49,7 @@ public class TextChunker {
                 searchFrom = charOffset + 1;
             }
 
-            chunks.add(new Chunk(segmentText, documentId, memberId, fileName, pageNumber));
+            chunks.add(new Chunk(segmentText, sourceChunkRef, documentId, memberId, fileName, pageNumber));
         }
 
         return new ChunkedDocument(chunks);

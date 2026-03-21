@@ -59,6 +59,9 @@ class ThreadTurnServiceTest {
     @Mock
     private TurnCitationRepository turnCitationRepository;
 
+    @Mock
+    private PromptTemplateService promptTemplateService;
+
     @InjectMocks
     private ThreadTurnService threadTurnService;
 

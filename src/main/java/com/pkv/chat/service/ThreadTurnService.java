@@ -55,11 +55,6 @@ public class ThreadTurnService {
     private static final String UNKNOWN_FILE_NAME = "알 수 없는 파일";
     private static final int DEFAULT_PAGE_NUMBER = 1;
 
-    private static final String SYSTEM_PROMPT = """
-            너는 사용자가 업로드한 문서를 기반으로 답변하는 어시스턴트다.
-            제공된 근거를 벗어나 추측하지 말고, 질문에 대한 답을 한국어로 간결하게 작성해라.
-            """;
-
     private final DocumentRepository documentRepository;
     private final EmbeddingModel embeddingModel;
     private final EmbeddingStore<TextSegment> embeddingStore;
@@ -67,6 +62,7 @@ public class ThreadTurnService {
     private final ChatThreadRepository chatThreadRepository;
     private final ThreadTurnRepository threadTurnRepository;
     private final TurnCitationRepository turnCitationRepository;
+    private final PromptTemplateService promptTemplateService;
 
     @Transactional
     public ThreadTurnCreateResponse createTurn(Long memberId, ThreadTurnCreateRequest request) {
@@ -79,7 +75,7 @@ public class ThreadTurnService {
         ChatResult result = createTurnCore(memberId, request.prompt(), contexts);
 
         ThreadTurn turn = saveThreadTurn(memberId, thread, request.prompt(), result);
-        saveTurnCitations(turn, result.citations());
+        saveTurnCitations(turn, result.retrievedCitations());
         thread.incrementTurnCount();
 
         return new ThreadTurnCreateResponse(
@@ -105,19 +101,26 @@ public class ThreadTurnService {
                     .filter(metadataKey("memberId").isEqualTo(memberId))
                     .build();
 
-            List<CitationResponse> citations = embeddingStore.search(searchRequest).matches().stream()
+            List<RetrievedCitation> retrievedCitations = embeddingStore.search(searchRequest).matches().stream()
                     .map(EmbeddingMatch::embedded)
                     .filter(Objects::nonNull)
-                    .map(this::toCitationResponse)
+                    .map(this::toRetrievedCitation)
                     .toList();
 
-            if (citations.isEmpty()) {
+            if (retrievedCitations.isEmpty()) {
                 return irrelevant();
             }
 
-            String userPrompt = buildUserPrompt(prompt, citations, contexts);
+            List<CitationResponse> citations = retrievedCitations.stream()
+                    .map(RetrievedCitation::response)
+                    .toList();
+
+            String sourceBlock = buildSourceBlock(citations);
+            String contextBlock = buildConversationContextBlock(contexts);
+            String userPrompt = promptTemplateService.renderUserPrompt(prompt, sourceBlock, contextBlock);
+
             var modelResponse = chatModel.chat(List.of(
-                    SystemMessage.from(SYSTEM_PROMPT),
+                    SystemMessage.from(promptTemplateService.systemPrompt()),
                     UserMessage.from(userPrompt)
             ));
             String answer = modelResponse.aiMessage() != null ? modelResponse.aiMessage().text() : null;
@@ -127,7 +130,7 @@ public class ThreadTurnService {
                 return failed(FAILED_MESSAGE);
             }
 
-            return completed(answer, citations);
+            return completed(answer, retrievedCitations);
         } catch (Exception e) {
             log.error("질문 처리 실패. memberId={}", memberId, e);
             return failed(FAILED_MESSAGE);
@@ -172,30 +175,36 @@ public class ThreadTurnService {
         return threadTurnRepository.save(turn);
     }
 
-    private void saveTurnCitations(ThreadTurn turn, List<CitationResponse> citations) {
-        if (citations.isEmpty()) {
+    private void saveTurnCitations(ThreadTurn turn, List<RetrievedCitation> retrievedCitations) {
+        if (retrievedCitations.isEmpty()) {
             return;
         }
 
-        List<TurnCitation> entities = IntStream.range(0, citations.size())
-                .mapToObj(index -> TurnCitation.from(turn, citations.get(index), index))
+        List<TurnCitation> entities = IntStream.range(0, retrievedCitations.size())
+                .mapToObj(index -> {
+                    RetrievedCitation rc = retrievedCitations.get(index);
+                    return TurnCitation.from(turn, rc.response(), rc.sourceChunkRef(), index);
+                })
                 .toList();
 
         turnCitationRepository.saveAll(entities);
     }
 
-    private CitationResponse toCitationResponse(TextSegment segment) {
+    private RetrievedCitation toRetrievedCitation(TextSegment segment) {
         String fileName = segment.metadata() != null ? segment.metadata().getString("fileName") : null;
         Integer pageNumber = segment.metadata() != null ? segment.metadata().getInteger("pageNumber") : null;
         String snippet = truncateSnippet(segment.text());
         Long documentId = extractDocumentId(segment);
+        String sourceChunkRef = extractSourceChunkRef(segment);
 
-        return new CitationResponse(
+        CitationResponse response = new CitationResponse(
                 documentId,
                 fileName == null || fileName.isBlank() ? UNKNOWN_FILE_NAME : fileName,
                 pageNumber == null || pageNumber <= 0 ? DEFAULT_PAGE_NUMBER : pageNumber,
                 snippet
         );
+
+        return new RetrievedCitation(response, sourceChunkRef);
     }
 
     private Long extractDocumentId(TextSegment segment) {
@@ -211,6 +220,18 @@ public class ThreadTurnService {
         }
     }
 
+    private String extractSourceChunkRef(TextSegment segment) {
+        if (segment.metadata() == null) {
+            return null;
+        }
+
+        try {
+            return segment.metadata().getString("sourceChunkRef");
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     private String truncateSnippet(String text) {
         if (text == null || text.isBlank()) {
             return "";
@@ -221,39 +242,20 @@ public class ThreadTurnService {
         return text.substring(0, TurnCitation.MAX_SNIPPET_LENGTH);
     }
 
-    private String buildUserPrompt(String prompt, List<CitationResponse> citations, List<ConversationContext> contexts) {
-        String citationBlock = IntStream.range(0, citations.size())
+    private String buildSourceBlock(List<CitationResponse> citations) {
+        return IntStream.range(0, citations.size())
                 .mapToObj(index -> formatCitation(index + 1, citations.get(index)))
                 .collect(Collectors.joining("\n"));
+    }
 
+    private String buildConversationContextBlock(List<ConversationContext> contexts) {
         if (contexts.isEmpty()) {
-            return """
-                [질문]
-                %s
-
-                [검색된 근거]
-                %s
-
-                위 근거만 사용해 답변해줘.
-                """.formatted(prompt, citationBlock);
+            return "";
         }
 
-        String contextBlock = IntStream.range(0, contexts.size())
+        return IntStream.range(0, contexts.size())
                 .mapToObj(index -> formatContext(index + 1, contexts.get(index)))
                 .collect(Collectors.joining("\n\n"));
-
-        return """
-                [이전 대화]
-                %s
-
-                [현재 질문]
-                %s
-
-                [검색된 근거]
-                %s
-
-                위 근거만 사용해 답변해줘.
-                """.formatted(contextBlock, prompt, citationBlock);
     }
 
     private String formatContext(int order, ConversationContext context) {
@@ -273,8 +275,8 @@ public class ThreadTurnService {
         );
     }
 
-    private ChatResult completed(String answer, List<CitationResponse> citations) {
-        return new ChatResult(ChatResponseStatus.COMPLETED, answer, citations);
+    private ChatResult completed(String answer, List<RetrievedCitation> retrievedCitations) {
+        return new ChatResult(ChatResponseStatus.COMPLETED, answer, retrievedCitations);
     }
 
     private ChatResult irrelevant() {
@@ -285,7 +287,14 @@ public class ThreadTurnService {
         return new ChatResult(ChatResponseStatus.FAILED, message, List.of());
     }
 
-    private record ChatResult(ChatResponseStatus status, String answer, List<CitationResponse> citations) {
+    private record ChatResult(ChatResponseStatus status, String answer, List<RetrievedCitation> retrievedCitations) {
+
+        List<CitationResponse> citations() {
+            return retrievedCitations.stream().map(RetrievedCitation::response).toList();
+        }
+    }
+
+    private record RetrievedCitation(CitationResponse response, String sourceChunkRef) {
     }
 
     private record ConversationContext(String prompt, String answer) {

@@ -25,6 +25,7 @@ public enum ErrorCode {
     THREAD_NOT_FOUND(HttpStatus.BAD_REQUEST, "Q001", "유효하지 않은 스레드입니다."),
     THREAD_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "Q002",
             "현재 스레드 턴 한도(5회)에 도달했습니다. 새 대화를 시작해주세요"),
+    CHAT_PROMPT_TEMPLATE_LOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "Q003", "프롬프트 템플릿 로딩에 실패했습니다."),
     TURN_NOT_FOUND(HttpStatus.NOT_FOUND, "H001", "턴을 찾을 수 없습니다."),
 
     // Document

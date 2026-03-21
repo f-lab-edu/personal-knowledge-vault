@@ -1,5 +1,6 @@
 package com.pkv.document.service;
 
+import com.pkv.chat.repository.TurnCitationRepository;
 import com.pkv.common.exception.ErrorCode;
 import com.pkv.common.exception.PkvException;
 import com.pkv.common.service.EmbeddingRepository;
@@ -9,6 +10,7 @@ import com.pkv.document.dto.DocumentResponse;
 import com.pkv.document.dto.PresignRequest;
 import com.pkv.document.dto.PresignResponse;
 import com.pkv.document.repository.DocumentRepository;
+import com.pkv.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
@@ -28,9 +30,12 @@ public class DocumentService {
     private final S3FileStorage s3FileStorage;
     private final EmbeddingJobProducer embeddingJobProducer;
     private final EmbeddingRepository embeddingRepository;
+    private final TurnCitationRepository turnCitationRepository;
+    private final MemberRepository memberRepository;
 
     @Transactional
     public PresignResponse requestPresignedUrl(Long memberId, PresignRequest request) {
+        validateMemberExists(memberId);
         String fileName = request.fileName();
         long fileSize = request.fileSize();
 
@@ -85,6 +90,7 @@ public class DocumentService {
 
     @Transactional
     public DocumentResponse confirmUpload(Long memberId, Long documentId) {
+        validateMemberExists(memberId);
         Document document = documentRepository.findByIdAndMemberId(documentId, memberId)
                 .orElseThrow(() -> new PkvException(ErrorCode.DOCUMENT_NOT_FOUND));
 
@@ -104,6 +110,7 @@ public class DocumentService {
 
     @Transactional
     public void deleteDocument(Long memberId, Long documentId) {
+        validateMemberExists(memberId);
         Document document = documentRepository.findByIdAndMemberId(documentId, memberId)
                 .orElseThrow(() -> new PkvException(ErrorCode.DOCUMENT_NOT_FOUND));
 
@@ -111,8 +118,15 @@ public class DocumentService {
             throw new PkvException(ErrorCode.DOCUMENT_DELETE_NOT_ALLOWED);
         }
 
+        turnCitationRepository.clearDocumentIdByDocumentId(documentId);
         embeddingRepository.deleteByDocumentId(documentId);
         s3FileStorage.deleteObject(document.getStoragePath());
         documentRepository.delete(document);
+    }
+
+    private void validateMemberExists(Long memberId) {
+        if (!memberRepository.existsByIdAndDeletedAtIsNull(memberId)) {
+            throw new PkvException(ErrorCode.MEMBER_NOT_FOUND);
+        }
     }
 }

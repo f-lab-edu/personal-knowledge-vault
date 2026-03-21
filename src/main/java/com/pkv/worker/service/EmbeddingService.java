@@ -43,6 +43,7 @@ public class EmbeddingService {
     private TextSegment toTextSegment(ChunkedDocument.Chunk chunk) {
         Metadata metadata = new Metadata()
                 .put("memberId", chunk.memberId())
+                .put("sourceChunkRef", chunk.sourceChunkRef())
                 .put("documentId", chunk.documentId())
                 .put("fileName", chunk.fileName())
                 .put("pageNumber", chunk.pageNumber());

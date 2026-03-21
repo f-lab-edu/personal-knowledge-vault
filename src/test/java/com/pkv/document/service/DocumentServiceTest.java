@@ -1,5 +1,6 @@
 package com.pkv.document.service;
 
+import com.pkv.chat.repository.TurnCitationRepository;
 import com.pkv.common.exception.ErrorCode;
 import com.pkv.common.exception.PkvException;
 import com.pkv.common.service.EmbeddingRepository;
@@ -9,6 +10,8 @@ import com.pkv.document.dto.DocumentResponse;
 import com.pkv.document.dto.PresignRequest;
 import com.pkv.document.dto.PresignResponse;
 import com.pkv.document.repository.DocumentRepository;
+import com.pkv.member.repository.MemberRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,6 +31,8 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 class DocumentServiceTest {
@@ -49,8 +54,19 @@ class DocumentServiceTest {
     @Mock
     private EmbeddingRepository embeddingRepository;
 
+    @Mock
+    private TurnCitationRepository turnCitationRepository;
+
+    @Mock
+    private MemberRepository memberRepository;
+
     @InjectMocks
     private DocumentService documentService;
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(memberRepository.existsByIdAndDeletedAtIsNull(MEMBER_ID)).thenReturn(true);
+    }
 
     @Test
     @DisplayName("유효한 파일 정보로 요청하면 Presigned URL과 documentId를 반환한다")
@@ -96,9 +112,22 @@ class DocumentServiceTest {
 
         documentService.deleteDocument(MEMBER_ID, 1L);
 
+        then(turnCitationRepository).should().clearDocumentIdByDocumentId(1L);
         then(embeddingRepository).should().deleteByDocumentId(1L);
         then(s3FileStorage).should().deleteObject(document.getStoragePath());
         then(documentRepository).should().delete(document);
+    }
+
+    @Test
+    @DisplayName("회원이 존재하지 않으면 MEMBER_NOT_FOUND 예외가 발생한다")
+    void deleteDocumentMemberNotFound() {
+        given(memberRepository.existsByIdAndDeletedAtIsNull(MEMBER_ID)).willReturn(false);
+
+        assertThatThrownBy(() -> documentService.deleteDocument(MEMBER_ID, 1L))
+                .isInstanceOf(PkvException.class)
+                .satisfies(e -> assertThat(((PkvException) e).getErrorCode()).isEqualTo(ErrorCode.MEMBER_NOT_FOUND));
+
+        then(turnCitationRepository).should(never()).clearDocumentIdByDocumentId(anyLong());
     }
 
     @Test

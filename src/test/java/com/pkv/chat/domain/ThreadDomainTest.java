@@ -54,10 +54,12 @@ class ThreadDomainTest {
         String longSnippet = "a".repeat(TurnCitation.MAX_SNIPPET_LENGTH + 50);
         CitationResponse citation = new CitationResponse(10L, "doc.pdf", 3, longSnippet);
 
-        TurnCitation turnCitation = TurnCitation.from(turn, citation, 0);
+        String sourceChunkRef = "10:0";
+        TurnCitation turnCitation = TurnCitation.from(turn, citation, sourceChunkRef, 0);
 
         assertThat(turnCitation.getThreadTurn()).isEqualTo(turn);
         assertThat(turn.getPrompt()).isEqualTo("질문");
         assertThat(turnCitation.getSnippet()).hasSize(TurnCitation.MAX_SNIPPET_LENGTH);
+        assertThat(turnCitation.getSourceChunkRef()).isEqualTo(sourceChunkRef);
     }
 }
