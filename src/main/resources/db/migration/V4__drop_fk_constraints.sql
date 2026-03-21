@@ -1,17 +1,17 @@
-ALTER TABLE sources
-DROP FOREIGN KEY fk_sources_member;
+ALTER TABLE documents
+DROP FOREIGN KEY fk_documents_member;
 
-ALTER TABLE chat_sessions
-DROP FOREIGN KEY fk_chat_sessions_member;
+ALTER TABLE chat_threads
+DROP FOREIGN KEY fk_chat_threads_member;
 
-ALTER TABLE chat_histories
-DROP FOREIGN KEY fk_chat_histories_member;
+ALTER TABLE thread_turns
+DROP FOREIGN KEY fk_thread_turns_member;
 
-ALTER TABLE chat_histories
-DROP FOREIGN KEY fk_chat_histories_session;
+ALTER TABLE thread_turns
+DROP FOREIGN KEY fk_thread_turns_thread;
 
-ALTER TABLE chat_history_sources
-DROP FOREIGN KEY fk_chat_history_sources_history;
+ALTER TABLE turn_citations
+DROP FOREIGN KEY fk_turn_citations_turn;
 
-ALTER TABLE chat_history_sources
-DROP FOREIGN KEY fk_chat_history_sources_source;
+ALTER TABLE turn_citations
+DROP FOREIGN KEY fk_turn_citations_document;
