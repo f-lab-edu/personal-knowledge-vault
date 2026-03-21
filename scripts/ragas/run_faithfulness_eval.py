@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 """
-Run one-shot retrieval evaluation with ragas (no reference contexts).
+Run one-shot faithfulness evaluation with ragas (no reference answers).
 
-이 스크립트는 "정답(reference context) 없이" retrieval 품질을 점수화한다.
-즉, 질문/응답/검색된 컨텍스트만으로 LLM judge가 컨텍스트 활용도를 판단한다.
+이 스크립트는 "정답(reference) 없이" 답변의 충실도(faithfulness)를 점수화한다.
+즉, LLM judge가 답변의 각 주장(claim)이 검색된 컨텍스트에 근거하는지 판단한다.
 
 Per-question flow:
-1) Chat API 호출: /api/chat/messages (access_token 쿠키 인증)
-2) DB 조회: 해당 session의 최신 chat_history를 조회
-3) DB 조회: chat_history_sources에서 source_chunk_ref 목록 확보
+1) Thread Turn API 호출: POST /api/threads/turns (access_token 쿠키 인증)
+2) 응답에서 status/answer/turnId 추출
+3) DB 조회: turn_citations에서 source_chunk_ref 목록 확보
 4) Qdrant 조회: sourceChunkRef 기반으로 full chunk 텍스트 복원
-5) ragas 점수화:
-   - 우선: ragas.metrics.ContextUtilization
-   - fallback: ragas.metrics.LLMContextPrecisionWithoutReference
+5) ragas Faithfulness 점수화:
+   - 답변을 개별 claim으로 분해
+   - 각 claim이 컨텍스트에 근거하는지 NLI 판정
+   - 점수 = (근거 있는 claim 수) / (전체 claim 수)
 6) 리포트 출력: JSON + Markdown
 """
 
@@ -67,6 +68,7 @@ class EvalConfig:
     judge_model: str
     request_timeout_sec: int
     verbose: bool
+    prompt_label: Optional[str]
     access_token: str
     member_id: int
     ragas_api_key: str
@@ -96,7 +98,7 @@ def slug_ts(dt: Optional[datetime] = None) -> str:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run one-shot ragas retrieval evaluation (no references).",
+        description="Run one-shot ragas faithfulness evaluation (no references).",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
@@ -125,8 +127,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--threshold",
         type=float,
-        default=0.75,
-        help="Pass threshold for mean context precision.",
+        default=0.70,
+        help="Pass threshold for mean faithfulness score.",
     )
     parser.add_argument(
         "--judge-model",
@@ -138,6 +140,11 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=30,
         help="HTTP request timeout in seconds.",
+    )
+    parser.add_argument(
+        "--prompt-label",
+        default=None,
+        help="Human-readable label for the prompt variant (e.g., 'baseline', 'v2-strict').",
     )
     parser.add_argument(
         "--verbose",
@@ -161,7 +168,6 @@ def parse_access_token(raw: str) -> str:
     if not text:
         raise ValueError("PKV_ACCESS_TOKEN is empty")
     if text.startswith("access_token="):
-        # Accept whole cookie-like value.
         text = text.split(";", 1)[0]
         return text.split("=", 1)[1]
     if text.startswith("Bearer "):
@@ -225,11 +231,9 @@ def build_config(args: argparse.Namespace) -> EvalConfig:
     CLI 인자 + .env/.env.local + 프로세스 env를 병합해 최종 설정을 만든다.
     """
 
-    # Root project envs.
     load_dotenv(".env")
-    load_dotenv(".env.local")
-    # RAGAS-specific envs. .env.local should have highest precedence.
-    load_dotenv("scripts/ragas/.env")
+    load_dotenv(".env.local", override=True)
+    load_dotenv("scripts/ragas/.env", override=True)
     load_dotenv("scripts/ragas/.env.local", override=True)
 
     access_token = parse_access_token(require_env("PKV_ACCESS_TOKEN"))
@@ -248,6 +252,7 @@ def build_config(args: argparse.Namespace) -> EvalConfig:
         judge_model=args.judge_model,
         request_timeout_sec=args.request_timeout_sec,
         verbose=args.verbose,
+        prompt_label=args.prompt_label,
         access_token=access_token,
         member_id=member_id,
         ragas_api_key=resolve_ragas_api_key(),
@@ -310,15 +315,15 @@ def load_questions(path: Path, max_samples: int) -> List[QuestionItem]:
 
 class ChatApiClient:
     """
-    PKV Chat API 호출 전용 클라이언트.
+    PKV Thread Turn API 호출 전용 클라이언트.
 
-    주의:
-    - 이 프로젝트 API 응답은 ApiResponse<T> 래퍼를 사용한다.
-    - 따라서 HTTP 200이어도 body.success=false일 수 있어 이중 체크가 필요하다.
+    POST /api/threads/turns 엔드포인트를 사용한다.
+    응답에 status, answer, citations가 포함되어 있어 별도 DB 조회 없이
+    기본 정보를 획득할 수 있다.
     """
 
     def __init__(self, base_url: str, access_token: str, timeout_sec: int):
-        self.endpoint = f"{base_url}/api/chat/messages"
+        self.endpoint = f"{base_url}/api/threads/turns"
         self.timeout_sec = timeout_sec
         self.session = requests.Session()
         self.session.headers.update(
@@ -329,52 +334,59 @@ class ChatApiClient:
         )
         self.session.cookies.set("access_token", access_token, path="/api")
 
-    def send(self, question: str) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+    def send(
+        self, question: str
+    ) -> Tuple[Optional[str], Optional[int], Optional[str], Optional[str], Optional[str]]:
         """
         질문 1건을 전송한다.
 
         Returns:
-        - session_id
-        - response(content)
+        - thread_id
+        - turn_id
+        - answer
+        - status ("COMPLETED", "IRRELEVANT", etc.)
         - error_message (성공 시 None)
         """
 
-        # 질문별 독립평가를 위해 sessionId를 None으로 전달한다.
-        payload = {"sessionId": None, "content": question}
+        payload = {"threadId": None, "prompt": question}
         try:
             resp = self.session.post(self.endpoint, json=payload, timeout=self.timeout_sec)
-        except Exception as exc:  # requests exceptions can vary by transport
-            return None, None, f"chat request failed: {exc}"
+        except Exception as exc:
+            return None, None, None, None, f"chat request failed: {exc}"
 
         if resp.status_code != 200:
-            return None, None, f"chat status={resp.status_code} body={resp.text[:500]}"
+            return None, None, None, None, f"chat status={resp.status_code} body={resp.text[:500]}"
 
         try:
             body = resp.json()
         except ValueError as exc:
-            return None, None, f"chat response is not JSON: {exc}"
+            return None, None, None, None, f"chat response is not JSON: {exc}"
 
         if not body.get("success", False):
             error = body.get("error") or {}
             code = error.get("code", "unknown")
             message = error.get("message", "unknown error")
-            return None, None, f"chat api error {code}: {message}"
+            return None, None, None, None, f"chat api error {code}: {message}"
 
         data = body.get("data") or {}
-        session_id = data.get("sessionId")
-        response = data.get("content")
-        if not session_id:
-            return None, None, "chat response missing sessionId"
-        if response is None:
-            response = ""
-        return str(session_id), str(response), None
+        thread_id = data.get("threadId")
+        turn_id = data.get("turnId")
+        answer = data.get("answer")
+        status = data.get("status")
+
+        if not thread_id:
+            return None, None, None, None, "chat response missing threadId"
+        if turn_id is None:
+            return None, None, None, None, "chat response missing turnId"
+
+        return str(thread_id), int(turn_id), answer or "", status or "", None
 
 
 class DbReader:
     """
     평가용 read-only DB 조회 유틸.
 
-    서버 코드 변경 없이 source_chunk_ref를 얻기 위해 직접 조회한다.
+    turn_citations 테이블에서 source_chunk_ref를 조회한다.
     """
 
     def __init__(self, cfg: EvalConfig):
@@ -392,48 +404,24 @@ class DbReader:
     def close(self) -> None:
         self.conn.close()
 
-    def latest_history(self, member_id: int, session_key: str) -> Optional[Dict[str, Any]]:
-        """
-        해당 세션의 최신 chat_history 1건을 가져온다.
-
-        Chat API 호출 직후 같은 세션에서 가장 최신 row가 방금 질의의 결과다.
-        """
-
-        sql = textwrap.dedent(
-            """
-            SELECT ch.id, ch.status, ch.answer
-            FROM chat_histories ch
-            INNER JOIN chat_sessions cs ON cs.id = ch.session_id
-            WHERE ch.member_id = %s
-              AND cs.member_id = %s
-              AND cs.session_key = %s
-            ORDER BY ch.created_at DESC, ch.id DESC
-            LIMIT 1
-            """
-        )
-        with self.conn.cursor() as cur:
-            cur.execute(sql, (member_id, member_id, session_key))
-            return cur.fetchone()
-
-    def source_chunk_refs(self, history_id: int) -> List[str]:
+    def turn_citation_refs(self, turn_id: int) -> List[str]:
         """
         display_order 순으로 source_chunk_ref를 반환한다.
 
-        ragas 평가의 retrieved_context_ids 역할을 하며,
         이후 Qdrant에서 full chunk 텍스트를 복원하는 키로 사용한다.
         """
 
         sql = textwrap.dedent(
             """
             SELECT source_chunk_ref
-            FROM chat_history_sources
-            WHERE history_id = %s
+            FROM turn_citations
+            WHERE turn_id = %s
             ORDER BY display_order ASC
             """
         )
         refs: List[str] = []
         with self.conn.cursor() as cur:
-            cur.execute(sql, (history_id,))
+            cur.execute(sql, (turn_id,))
             rows = cur.fetchall()
             for row in rows:
                 ref = (row.get("source_chunk_ref") or "").strip()
@@ -488,7 +476,6 @@ class QdrantRestClient:
         2차: sourceChunkRef only (스키마/타입 드리프트 대응)
         """
 
-        # First pass: sourceChunkRef + memberId for strict isolation.
         strict_filter = {
             "must": [
                 {"key": "sourceChunkRef", "match": {"value": source_chunk_ref}},
@@ -501,7 +488,6 @@ class QdrantRestClient:
         if points:
             return self._extract_text((points[0].get("payload") or {}))
 
-        # Fallback: sourceChunkRef only, for payload schema drift.
         relaxed_filter = {"must": [{"key": "sourceChunkRef", "match": {"value": source_chunk_ref}}]}
         body = {"limit": 1, "with_payload": True, "with_vector": False, "filter": relaxed_filter}
         obj = self._scroll(body)
@@ -511,22 +497,16 @@ class QdrantRestClient:
         return self._extract_text((points[0].get("payload") or {}))
 
 
-class RagasNoRefScorer:
+class RagasFaithfulnessScorer:
     """
-    ragas 무정답 평가 래퍼.
+    ragas Faithfulness 평가 래퍼.
 
-    실제 ragas 호출 지점:
-    - 우선 import:
-      - from ragas.llms import llm_factory
-      - from ragas.metrics import ContextUtilization
-    - fallback import:
-      - from ragas.metrics import LLMContextPrecisionWithoutReference
-    - 실행:
-      - metric.single_turn_ascore(sample)
-      - 또는 metric.single_turn_score(sample)
+    Faithfulness는 답변의 각 claim이 검색된 컨텍스트에 근거하는지를 판정한다.
+    점수 = (근거 있는 claim 수) / (전체 claim 수)
 
-    참고:
-    - deprecated score API는 ragas 0.2 계열 경고를 유발하므로 사용하지 않는다.
+    LLM 호출 2회/질문:
+    1) claim 분해 (답변 → 개별 주장 목록)
+    2) NLI 검증 (각 주장이 컨텍스트에서 추론 가능한지)
 
     payload는 ragas가 요구하는 필드명으로 맞춘다:
     - user_input
@@ -535,40 +515,36 @@ class RagasNoRefScorer:
     """
 
     def __init__(self, api_key: str, model_name: str):
-        # llm_factory resolves provider credentials from OPENAI_API_KEY.
         os.environ["OPENAI_API_KEY"] = api_key
 
-        self.metric_name = "context_precision_no_reference"
+        self.metric_name = "faithfulness"
+        self._init_error: Optional[str] = None
 
         try:
-            # 최신 ragas 계열에서 권장되는 컨텍스트 활용도 지표.
             from ragas.llms import llm_factory
-            from ragas.metrics import ContextUtilization
+            from ragas.metrics import Faithfulness
 
             llm = llm_factory(model=model_name)
-            self.metric = ContextUtilization(llm=llm)
+            self.metric = Faithfulness(llm=llm)
         except Exception as exc:
-            # 구버전 ragas 호환을 위한 레거시 metric fallback.
-            from ragas.llms import llm_factory
-            from ragas.metrics import LLMContextPrecisionWithoutReference
-
-            self.metric = LLMContextPrecisionWithoutReference(llm=llm_factory(model=model_name))
-            self.metric_name = "context_precision_no_reference_legacy"
             self._init_error = str(exc)
-        else:
-            self._init_error = None
+            raise RuntimeError(
+                f"Failed to initialize Faithfulness metric: {exc}. "
+                f"Ensure ragas>=0.2.0 is installed."
+            ) from exc
+
         self.sample_cls = self._resolve_single_turn_sample_cls()
 
     @staticmethod
     def _resolve_single_turn_sample_cls() -> Optional[Any]:
         """ragas 버전 차이를 감안해 SingleTurnSample import 경로를 해석한다."""
         try:
-            from ragas import SingleTurnSample  # type: ignore
+            from ragas import SingleTurnSample
 
             return SingleTurnSample
         except Exception:
             try:
-                from ragas.dataset_schema import SingleTurnSample  # type: ignore
+                from ragas.dataset_schema import SingleTurnSample
 
                 return SingleTurnSample
             except Exception:
@@ -595,7 +571,7 @@ class RagasNoRefScorer:
 
     def score(self, question: str, response: str, retrieved_contexts: Sequence[str]) -> float:
         """
-        질문 1건에 대한 ragas 점수를 계산한다.
+        질문 1건에 대한 faithfulness 점수를 계산한다.
 
         핵심 매핑:
         - question -> user_input
@@ -610,15 +586,13 @@ class RagasNoRefScorer:
         }
 
         if not self.sample_cls:
-            message = "SingleTurnSample class is unavailable for installed ragas version"
-            if self._init_error:
-                message += f" (metric init fallback reason: {self._init_error})"
-            raise RuntimeError(message)
+            raise RuntimeError(
+                "SingleTurnSample class is unavailable for installed ragas version"
+            )
 
         sample = self.sample_cls(**payload)
 
         if hasattr(self.metric, "single_turn_ascore"):
-            # single_turn_ascore는 async API이므로 이벤트 루프에서 실행.
             result = asyncio.run(self.metric.single_turn_ascore(sample))
             return self._as_float(result)
 
@@ -634,14 +608,17 @@ class RagasNoRefScorer:
 def build_report_markdown(result: Dict[str, Any]) -> str:
     summary = result["summary"]
     lines: List[str] = []
-    lines.append("# RAGAS Retrieval Evaluation Report")
+    lines.append("# RAGAS Faithfulness Evaluation Report")
     lines.append("")
     lines.append(f"- Run ID: `{result['run_id']}`")
+    prompt_label = result.get("prompt_label")
+    if prompt_label:
+        lines.append(f"- Prompt Label: `{prompt_label}`")
     lines.append(f"- Started At (UTC): `{result['started_at']}`")
     lines.append(f"- Finished At (UTC): `{result['finished_at']}`")
     lines.append(f"- Dataset: `{result['dataset_path']}`")
     lines.append(f"- Judge Model: `{result['judge_model']}`")
-    lines.append(f"- Metric Label: `{result['metric_name']}`")
+    lines.append(f"- Metric: `{result['metric_name']}`")
     lines.append("")
     lines.append("## Summary")
     lines.append("")
@@ -651,7 +628,7 @@ def build_report_markdown(result: Dict[str, Any]) -> str:
     lines.append(f"- Excluded Irrelevant: **{summary['excluded_irrelevant']}**")
     lines.append(f"- Excluded Context Missing: **{summary['excluded_context_missing']}**")
     score_text = "N/A" if summary["mean_score"] is None else f"{summary['mean_score']:.6f}"
-    lines.append(f"- Mean Score: **{score_text}**")
+    lines.append(f"- Mean Faithfulness Score: **{score_text}**")
     lines.append(f"- Threshold: **{summary['threshold']:.2f}**")
     lines.append(f"- Pass: **{summary['pass']}**")
     lines.append("")
@@ -659,15 +636,17 @@ def build_report_markdown(result: Dict[str, Any]) -> str:
     ok_samples = [s for s in result["samples"] if s["status"] == STATUS_OK]
     ok_samples = sorted(ok_samples, key=lambda s: s.get("metric_score", 1e9))
     if ok_samples:
-        lines.append("## Lowest Scored Samples")
+        lines.append("## Lowest Scored Samples (Potential Hallucination)")
         lines.append("")
-        lines.append("| question_id | score | context_count |")
-        lines.append("|---|---:|---:|")
+        lines.append("| question_id | score | context_count | answer_preview |")
+        lines.append("|---|---:|---:|---|")
         for sample in ok_samples[:10]:
             score = sample.get("metric_score")
             score_value = "N/A" if score is None else f"{score:.6f}"
+            answer = (sample.get("response") or "")[:80].replace("\n", " ").replace("|", "\\|")
             lines.append(
-                f"| `{sample['question_id']}` | {score_value} | {sample.get('retrieved_contexts_count', 0)} |"
+                f"| `{sample['question_id']}` | {score_value}"
+                f" | {sample.get('retrieved_contexts_count', 0)} | {answer} |"
             )
         lines.append("")
 
@@ -732,26 +711,19 @@ def evaluate(cfg: EvalConfig) -> Dict[str, Any]:
     메인 평가 루프.
 
     샘플 1건 처리 순서:
-    1) Chat 호출
-    2) 최신 history 조회
-    3) history status 분기(COMPLETED/IRRELEVANT/기타)
-    4) source_chunk_ref 조회
-    5) Qdrant full chunk 복원
-    6) ragas 점수 계산
-    7) 상태/오류를 샘플 결과에 기록
+    1) Thread Turn API 호출
+    2) 응답 status 분기 (COMPLETED/IRRELEVANT/기타)
+    3) turn_citations에서 source_chunk_ref 조회
+    4) Qdrant full chunk 복원
+    5) ragas Faithfulness 점수 계산
+    6) 상태/오류를 샘플 결과에 기록
     """
 
     questions = load_questions(cfg.dataset, cfg.max_samples)
     chat = ChatApiClient(cfg.base_url, cfg.access_token, cfg.request_timeout_sec)
     db = DbReader(cfg)
     qdrant = QdrantRestClient(cfg)
-    scorer = RagasNoRefScorer(cfg.ragas_api_key, cfg.judge_model)
-
-    if scorer._init_error:
-        print(
-            f"[warn] ContextUtilization init failed, using legacy metric fallback: {scorer._init_error}",
-            file=sys.stderr,
-        )
+    scorer = RagasFaithfulnessScorer(cfg.ragas_api_key, cfg.judge_model)
 
     samples: List[Dict[str, Any]] = []
     started = utc_now()
@@ -761,8 +733,7 @@ def evaluate(cfg: EvalConfig) -> Dict[str, Any]:
             if cfg.verbose:
                 print(f"[{idx}/{len(questions)}] {item.question_id}")
 
-            # 리포트에 그대로 들어가는 per-sample raw 레코드.
-            base = {
+            base: Dict[str, Any] = {
                 "question_id": item.question_id,
                 "question": item.question,
                 "status": None,
@@ -773,63 +744,50 @@ def evaluate(cfg: EvalConfig) -> Dict[str, Any]:
                 "retrieved_contexts_count": 0,
                 "metric_score": None,
                 "error": None,
-                "chat_session_id": None,
-                "chat_history_id": None,
-                "history_status": None,
+                "thread_id": None,
+                "turn_id": None,
+                "turn_status": None,
             }
 
-            # Step 1) Chat 호출
-            session_id, response, chat_error = chat.send(item.question)
+            # Step 1) Thread Turn API 호출
+            thread_id, turn_id, answer, status, chat_error = chat.send(item.question)
             if chat_error:
                 base["status"] = STATUS_EXCLUDED_FAILED
                 base["error"] = chat_error
                 samples.append(base)
                 continue
 
-            base["chat_session_id"] = session_id
-            base["response"] = response
+            base["thread_id"] = thread_id
+            base["turn_id"] = turn_id
+            base["response"] = answer
+            base["turn_status"] = status
 
-            # Step 2) 최신 history 조회
-            history = db.latest_history(cfg.member_id, session_id or "")
-            if not history:
-                base["status"] = STATUS_EXCLUDED_FAILED
-                base["error"] = "latest history not found after chat request"
-                samples.append(base)
-                continue
-
-            history_id = int(history["id"])
-            history_status = str(history.get("status") or "").upper()
-            answer_text = str(history.get("answer") or "")
-            base["chat_history_id"] = history_id
-            base["history_status"] = history_status
-            if not base["response"] and answer_text:
-                base["response"] = answer_text
-
-            # Step 3) 상태 분기: IRRELEVANT는 점수 제외(집계만)
-            if history_status == "IRRELEVANT":
+            # Step 2) 상태 분기
+            upper_status = (status or "").upper()
+            if upper_status == "IRRELEVANT":
                 base["status"] = STATUS_EXCLUDED_IRRELEVANT
-                base["error"] = "history status is IRRELEVANT"
+                base["error"] = "turn status is IRRELEVANT"
                 samples.append(base)
                 continue
-            if history_status != "COMPLETED":
+            if upper_status != "COMPLETED":
                 base["status"] = STATUS_EXCLUDED_FAILED
-                base["error"] = f"history status is {history_status or 'UNKNOWN'}"
+                base["error"] = f"turn status is {status or 'UNKNOWN'}"
                 samples.append(base)
                 continue
 
-            # Step 4) source_chunk_ref 확보
-            refs = db.source_chunk_refs(history_id)
+            # Step 3) source_chunk_ref 확보
+            refs = db.turn_citation_refs(turn_id)
             base["retrieved_context_ids"] = refs
             if not refs:
                 base["status"] = STATUS_EXCLUDED_CONTEXT_MISSING
-                base["error"] = "no source_chunk_ref found for completed history"
+                base["error"] = "no source_chunk_ref found for completed turn"
                 samples.append(base)
                 continue
 
+            # Step 4) sourceChunkRef -> full chunk text 복원
             contexts: List[str] = []
             resolved_refs: List[str] = []
             missing_refs: List[str] = []
-            # Step 5) sourceChunkRef -> full chunk text 복원
             for ref in refs:
                 try:
                     text = qdrant.get_chunk_text(ref, cfg.member_id)
@@ -866,7 +824,7 @@ def evaluate(cfg: EvalConfig) -> Dict[str, Any]:
                 samples.append(base)
                 continue
 
-            # Step 6) ragas 점수 계산
+            # Step 5) ragas Faithfulness 점수 계산
             try:
                 score = scorer.score(item.question, str(base["response"]), contexts)
             except Exception as exc:
@@ -883,10 +841,13 @@ def evaluate(cfg: EvalConfig) -> Dict[str, Any]:
     finally:
         db.close()
 
-    # Step 7) 전체 요약
     finished = utc_now()
     summary = summarize_samples(samples, cfg.threshold)
-    run_id = slug_ts(started)
+
+    run_id = slug_ts(started) + "_faithfulness"
+    if cfg.prompt_label:
+        run_id += f"_{cfg.prompt_label}"
+
     return {
         "run_id": run_id,
         "started_at": iso_ts(started),
@@ -897,6 +858,7 @@ def evaluate(cfg: EvalConfig) -> Dict[str, Any]:
         "member_id": cfg.member_id,
         "judge_model": cfg.judge_model,
         "metric_name": scorer.metric_name,
+        "prompt_label": cfg.prompt_label,
         "samples_requested": cfg.max_samples,
         "summary": summary,
         "samples": samples,
@@ -936,8 +898,9 @@ def main() -> int:
     summary = result["summary"]
     score = summary["mean_score"]
     score_text = "N/A" if score is None else f"{score:.6f}"
+    label_text = f" label={cfg.prompt_label}" if cfg.prompt_label else ""
     print(f"run_id={result['run_id']}")
-    print(f"score={score_text} threshold={summary['threshold']:.2f} pass={summary['pass']}")
+    print(f"score={score_text} threshold={summary['threshold']:.2f} pass={summary['pass']}{label_text}")
     print(f"evaluated={summary['evaluated']} total={summary['total']}")
     print(f"json={json_path}")
     print(f"markdown={md_path}")
