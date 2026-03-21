@@ -81,6 +81,26 @@ class EvalConfig:
     qdrant_collection: str
 
 
+PROMPT_DIR = Path("src/main/resources/prompts/chat")
+PROMPT_FILES = [
+    "system.prompt.md",
+    "user_with_context.prompt.md",
+    "user_without_context.prompt.md",
+]
+
+
+def load_prompt_snapshot() -> Dict[str, str]:
+    """평가 시점의 프롬프트 템플릿 전문을 읽어 반환한다."""
+    snapshot = {}
+    for name in PROMPT_FILES:
+        path = PROMPT_DIR / name
+        if path.exists():
+            snapshot[name] = path.read_text(encoding="utf-8").strip()
+        else:
+            snapshot[name] = "(file not found)"
+    return snapshot
+
+
 def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -649,6 +669,18 @@ def build_report_markdown(result: Dict[str, Any]) -> str:
     lines.append(f"- Pass: **{summary['pass']}**")
     lines.append("")
 
+    prompt_snapshot = result.get("prompt_snapshot")
+    if prompt_snapshot:
+        lines.append("## Prompt Snapshot")
+        lines.append("")
+        for filename, content in prompt_snapshot.items():
+            lines.append(f"### {filename}")
+            lines.append("")
+            lines.append("```")
+            lines.append(content)
+            lines.append("```")
+            lines.append("")
+
     ok_samples = [s for s in result["samples"] if s["status"] == STATUS_OK]
     ok_samples = sorted(ok_samples, key=lambda s: s.get("metric_score", 1e9))
     if ok_samples:
@@ -877,6 +909,7 @@ def evaluate(cfg: EvalConfig) -> Dict[str, Any]:
         "judge_model": cfg.judge_model,
         "metric_name": scorer.metric_name,
         "prompt_label": cfg.prompt_label,
+        "prompt_snapshot": load_prompt_snapshot(),
         "samples_requested": cfg.max_samples,
         "summary": summary,
         "samples": samples,
