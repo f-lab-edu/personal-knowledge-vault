@@ -62,6 +62,9 @@ class ThreadTurnServiceTest {
     @Mock
     private PromptTemplateService promptTemplateService;
 
+    @Mock
+    private HydeQueryTransformer hydeQueryTransformer;
+
     @InjectMocks
     private ThreadTurnService threadTurnService;
 

@@ -63,6 +63,7 @@ public class ThreadTurnService {
     private final ThreadTurnRepository threadTurnRepository;
     private final TurnCitationRepository turnCitationRepository;
     private final PromptTemplateService promptTemplateService;
+    private final HydeQueryTransformer hydeQueryTransformer;
 
     @Transactional
     public ThreadTurnCreateResponse createTurn(Long memberId, ThreadTurnCreateRequest request) {
@@ -93,7 +94,8 @@ public class ThreadTurnService {
         }
 
         try {
-            Embedding queryEmbedding = embeddingModel.embed(prompt).content();
+            String hydeDoc = hydeQueryTransformer.transform(prompt);
+            Embedding queryEmbedding = embeddingModel.embed(hydeDoc).content();
             EmbeddingSearchRequest searchRequest = EmbeddingSearchRequest.builder()
                     .queryEmbedding(queryEmbedding)
                     .maxResults(ThreadPolicy.MAX_RESULTS)
