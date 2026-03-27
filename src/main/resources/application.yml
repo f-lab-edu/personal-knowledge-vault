@@ -34,6 +34,7 @@ langchain4j:
     embedding-model:
       api-key: ${EMBEDDING_MODEL_API_KEY:}
       model-name: text-embedding-3-small
+      max-segments-per-batch: 100
 
 
 qdrant:
