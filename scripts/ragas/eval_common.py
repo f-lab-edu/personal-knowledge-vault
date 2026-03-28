@@ -21,7 +21,7 @@ import os
 import statistics
 import textwrap
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
@@ -104,7 +104,8 @@ def iso_ts(dt: Optional[datetime] = None) -> str:
 
 def slug_ts(dt: Optional[datetime] = None) -> str:
     value = dt or utc_now()
-    return value.strftime("%Y%m%d_%H%M%S")
+    kst = value.astimezone(timezone(timedelta(hours=9)))
+    return kst.strftime("%Y%m%d_%H%M")
 
 
 def load_prompt_snapshot() -> Dict[str, str]:
