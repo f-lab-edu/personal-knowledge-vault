@@ -36,7 +36,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Objects;
+
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -107,9 +107,9 @@ public class ThreadTurnService {
                             .filter(metadataKey("memberId").isEqualTo(memberId))
                             .build())
                     .flatMap(req -> embeddingStore.search(req).matches().stream())
-                    .map(EmbeddingMatch::embedded)
-                    .filter(Objects::nonNull)
-                    .map(this::toRetrievedCitation)
+                    .filter(match -> match.embedded() != null)
+                    .sorted(Comparator.comparingDouble(EmbeddingMatch<TextSegment>::score).reversed())
+                    .map(match -> toRetrievedCitation(match.embedded()))
                     .toList();
 
             List<RetrievedCitation> retrievedCitations = deduplicateBySourceChunkRef(allCitations);
@@ -198,8 +198,8 @@ public class ThreadTurnService {
     }
 
     private List<RetrievedCitation> deduplicateBySourceChunkRef(List<RetrievedCitation> citations) {
-        var seen = new LinkedHashMap<String, RetrievedCitation>();
-        var nullRefCitations = new ArrayList<RetrievedCitation>();
+        LinkedHashMap<String, RetrievedCitation> seen = new LinkedHashMap<>();
+        List<RetrievedCitation> nullRefCitations = new ArrayList<>();
 
         for (RetrievedCitation rc : citations) {
             if (rc.sourceChunkRef() == null) {
@@ -209,7 +209,7 @@ public class ThreadTurnService {
             }
         }
 
-        var result = new ArrayList<>(seen.values());
+        List<RetrievedCitation> result = new ArrayList<>(seen.values());
         result.addAll(nullRefCitations);
         return result.stream().limit(ThreadPolicy.MAX_RESULTS).toList();
     }
