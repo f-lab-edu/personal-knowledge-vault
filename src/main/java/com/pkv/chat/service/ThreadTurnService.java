@@ -6,6 +6,7 @@ import com.pkv.chat.domain.ChatThread;
 import com.pkv.chat.domain.ThreadTurn;
 import com.pkv.chat.domain.TurnCitation;
 import com.pkv.chat.dto.CitationResponse;
+import com.pkv.chat.dto.HydeResult;
 import com.pkv.chat.dto.ThreadTurnCreateRequest;
 import com.pkv.chat.dto.ThreadTurnCreateResponse;
 import com.pkv.chat.repository.ChatThreadRepository;

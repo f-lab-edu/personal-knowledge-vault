@@ -1,4 +1,4 @@
-package com.pkv.chat.service;
+package com.pkv.chat.dto;
 
 import java.util.List;
 

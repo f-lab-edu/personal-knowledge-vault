@@ -1,5 +1,6 @@
 package com.pkv.chat.service;
 
+import com.pkv.chat.dto.HydeResult;
 import com.pkv.common.exception.ErrorCode;
 import com.pkv.common.exception.PkvException;
 import dev.langchain4j.model.chat.ChatModel;

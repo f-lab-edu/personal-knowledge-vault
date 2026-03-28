@@ -1,5 +1,6 @@
 package com.pkv.chat.service;
 
+import com.pkv.chat.dto.HydeResult;
 import dev.langchain4j.model.chat.ChatModel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
