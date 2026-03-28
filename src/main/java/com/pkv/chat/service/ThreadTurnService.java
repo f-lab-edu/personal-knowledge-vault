@@ -15,7 +15,6 @@ import com.pkv.common.exception.ErrorCode;
 import com.pkv.common.exception.PkvException;
 import com.pkv.document.domain.DocumentStatus;
 import com.pkv.document.repository.DocumentRepository;
-import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.data.segment.TextSegment;
@@ -32,7 +31,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -94,20 +95,23 @@ public class ThreadTurnService {
         }
 
         try {
-            String hydeDoc = hydeQueryTransformer.transform(prompt);
-            Embedding queryEmbedding = embeddingModel.embed(hydeDoc).content();
-            EmbeddingSearchRequest searchRequest = EmbeddingSearchRequest.builder()
-                    .queryEmbedding(queryEmbedding)
-                    .maxResults(ThreadPolicy.MAX_RESULTS)
-                    .minScore(ThreadPolicy.MIN_SCORE)
-                    .filter(metadataKey("memberId").isEqualTo(memberId))
-                    .build();
+            HydeResult hydeResult = hydeQueryTransformer.transform(prompt);
 
-            List<RetrievedCitation> retrievedCitations = embeddingStore.search(searchRequest).matches().stream()
+            List<RetrievedCitation> allCitations = hydeResult.documents().stream()
+                    .map(doc -> embeddingModel.embed(doc).content())
+                    .map(embedding -> EmbeddingSearchRequest.builder()
+                            .queryEmbedding(embedding)
+                            .maxResults(ThreadPolicy.MAX_RESULTS)
+                            .minScore(ThreadPolicy.MIN_SCORE)
+                            .filter(metadataKey("memberId").isEqualTo(memberId))
+                            .build())
+                    .flatMap(req -> embeddingStore.search(req).matches().stream())
                     .map(EmbeddingMatch::embedded)
                     .filter(Objects::nonNull)
                     .map(this::toRetrievedCitation)
                     .toList();
+
+            List<RetrievedCitation> retrievedCitations = deduplicateBySourceChunkRef(allCitations);
 
             if (retrievedCitations.isEmpty()) {
                 return irrelevant();
@@ -190,6 +194,23 @@ public class ThreadTurnService {
                 .toList();
 
         turnCitationRepository.saveAll(entities);
+    }
+
+    private List<RetrievedCitation> deduplicateBySourceChunkRef(List<RetrievedCitation> citations) {
+        var seen = new LinkedHashMap<String, RetrievedCitation>();
+        var nullRefCitations = new ArrayList<RetrievedCitation>();
+
+        for (RetrievedCitation rc : citations) {
+            if (rc.sourceChunkRef() == null) {
+                nullRefCitations.add(rc);
+            } else {
+                seen.putIfAbsent(rc.sourceChunkRef(), rc);
+            }
+        }
+
+        var result = new ArrayList<>(seen.values());
+        result.addAll(nullRefCitations);
+        return result.stream().limit(ThreadPolicy.MAX_RESULTS).toList();
     }
 
     private RetrievedCitation toRetrievedCitation(TextSegment segment) {

@@ -21,6 +21,8 @@ import java.nio.charset.StandardCharsets;
 public class HydeQueryTransformer {
 
     private static final String QUESTION_TOKEN = "{{question}}";
+    private static final String KO_DELIMITER = "---KO---";
+    private static final String EN_DELIMITER = "---EN---";
 
     private final ChatModel chatModel;
     private final String template;
@@ -34,22 +36,40 @@ public class HydeQueryTransformer {
         this.template = loadTemplate(resourceLoader, hydePath);
     }
 
-    public String transform(String query) {
+    public HydeResult transform(String query) {
         try {
             String prompt = template.replace(QUESTION_TOKEN, query);
-            String hydeDocument = chatModel.chat(prompt);
+            String response = chatModel.chat(prompt);
 
-            if (hydeDocument == null || hydeDocument.isBlank()) {
+            if (response == null || response.isBlank()) {
                 log.warn("HyDE 가상 문서 생성 실패 - 빈 응답. 원본 쿼리를 사용합니다.");
-                return query;
+                return new HydeResult(query, query);
             }
 
-            log.debug("HyDE 변환 완료. query='{}', hydeDoc='{}'", query, hydeDocument);
-            return hydeDocument;
+            return parseResponse(response, query);
         } catch (Exception e) {
             log.warn("HyDE 변환 실패. 원본 쿼리를 사용합니다. query='{}'", query, e);
-            return query;
+            return new HydeResult(query, query);
         }
+    }
+
+    HydeResult parseResponse(String response, String fallbackQuery) {
+        int koIdx = response.indexOf(KO_DELIMITER);
+        int enIdx = response.indexOf(EN_DELIMITER);
+
+        if (koIdx == -1 || enIdx == -1 || enIdx <= koIdx) {
+            log.warn("HyDE 응답 파싱 실패 - 구분자 누락. 전체 응답을 한국어로 사용합니다.");
+            return new HydeResult(response.strip(), fallbackQuery);
+        }
+
+        String ko = response.substring(koIdx + KO_DELIMITER.length(), enIdx).strip();
+        String en = response.substring(enIdx + EN_DELIMITER.length()).strip();
+
+        if (ko.isBlank()) ko = fallbackQuery;
+        if (en.isBlank()) en = fallbackQuery;
+
+        log.debug("HyDE 변환 완료. query='{}', ko='{}', en='{}'", fallbackQuery, ko, en);
+        return new HydeResult(ko, en);
     }
 
     private String loadTemplate(ResourceLoader resourceLoader, String path) {
