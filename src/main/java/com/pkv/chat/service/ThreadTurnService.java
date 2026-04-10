@@ -6,6 +6,7 @@ import com.pkv.chat.domain.ChatThread;
 import com.pkv.chat.domain.ThreadTurn;
 import com.pkv.chat.domain.TurnCitation;
 import com.pkv.chat.dto.CitationResponse;
+import com.pkv.chat.dto.HydeResult;
 import com.pkv.chat.dto.ThreadTurnCreateRequest;
 import com.pkv.chat.dto.ThreadTurnCreateResponse;
 import com.pkv.chat.repository.ChatThreadRepository;
@@ -15,7 +16,6 @@ import com.pkv.common.exception.ErrorCode;
 import com.pkv.common.exception.PkvException;
 import com.pkv.document.domain.DocumentStatus;
 import com.pkv.document.repository.DocumentRepository;
-import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.data.segment.TextSegment;
@@ -32,9 +32,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Objects;
+
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -63,6 +65,7 @@ public class ThreadTurnService {
     private final ThreadTurnRepository threadTurnRepository;
     private final TurnCitationRepository turnCitationRepository;
     private final PromptTemplateService promptTemplateService;
+    private final HydeQueryTransformer hydeQueryTransformer;
 
     @Transactional
     public ThreadTurnCreateResponse createTurn(Long memberId, ThreadTurnCreateRequest request) {
@@ -93,19 +96,23 @@ public class ThreadTurnService {
         }
 
         try {
-            Embedding queryEmbedding = embeddingModel.embed(prompt).content();
-            EmbeddingSearchRequest searchRequest = EmbeddingSearchRequest.builder()
-                    .queryEmbedding(queryEmbedding)
-                    .maxResults(ThreadPolicy.MAX_RESULTS)
-                    .minScore(ThreadPolicy.MIN_SCORE)
-                    .filter(metadataKey("memberId").isEqualTo(memberId))
-                    .build();
+            HydeResult hydeResult = hydeQueryTransformer.transform(prompt);
 
-            List<RetrievedCitation> retrievedCitations = embeddingStore.search(searchRequest).matches().stream()
-                    .map(EmbeddingMatch::embedded)
-                    .filter(Objects::nonNull)
-                    .map(this::toRetrievedCitation)
+            List<RetrievedCitation> allCitations = hydeResult.documents().stream()
+                    .map(doc -> embeddingModel.embed(doc).content())
+                    .map(embedding -> EmbeddingSearchRequest.builder()
+                            .queryEmbedding(embedding)
+                            .maxResults(ThreadPolicy.MAX_RESULTS)
+                            .minScore(ThreadPolicy.MIN_SCORE)
+                            .filter(metadataKey("memberId").isEqualTo(memberId))
+                            .build())
+                    .flatMap(req -> embeddingStore.search(req).matches().stream())
+                    .filter(match -> match.embedded() != null)
+                    .sorted(Comparator.comparingDouble(EmbeddingMatch<TextSegment>::score).reversed())
+                    .map(match -> toRetrievedCitation(match.embedded()))
                     .toList();
+
+            List<RetrievedCitation> retrievedCitations = deduplicateBySourceChunkRef(allCitations);
 
             if (retrievedCitations.isEmpty()) {
                 return irrelevant();
@@ -188,6 +195,23 @@ public class ThreadTurnService {
                 .toList();
 
         turnCitationRepository.saveAll(entities);
+    }
+
+    private List<RetrievedCitation> deduplicateBySourceChunkRef(List<RetrievedCitation> citations) {
+        LinkedHashMap<String, RetrievedCitation> seen = new LinkedHashMap<>();
+        List<RetrievedCitation> nullRefCitations = new ArrayList<>();
+
+        for (RetrievedCitation rc : citations) {
+            if (rc.sourceChunkRef() == null) {
+                nullRefCitations.add(rc);
+            } else {
+                seen.putIfAbsent(rc.sourceChunkRef(), rc);
+            }
+        }
+
+        List<RetrievedCitation> result = new ArrayList<>(seen.values());
+        result.addAll(nullRefCitations);
+        return result.stream().limit(ThreadPolicy.MAX_RESULTS).toList();
     }
 
     private RetrievedCitation toRetrievedCitation(TextSegment segment) {

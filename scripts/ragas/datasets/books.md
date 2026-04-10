@@ -10,3 +10,8 @@
 - spring-framework-500-1000.pdf
 - springpronote.pdf
 - spring-data-jpa-reference.pdf
+- Hibernate_Introduction.pdf
+- javanotes9-1-400.pdf
+- javanotes9-401-781.pdf
+- oracle-java-core-libraries.pdf
+- Modern-java-guide.pdf
